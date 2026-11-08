@@ -85,6 +85,9 @@ kbd{font-family:var(--body); font-size:12px; background:var(--dash); border:1px 
 .tag b{font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:.03em; text-transform:uppercase; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .tag.off{visibility:hidden}
 .tag.stats{flex:none; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+.tag.stats span{display:block; color:var(--mute)}
+.tag.stats b{text-transform:none; letter-spacing:.01em}
+.gap-ok{color:var(--ink)} .gap-near{color:var(--amber)} .gap-close{color:var(--bad)}
 .goal{color:var(--mute); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
 .tip{position:absolute; left:8px; right:8px; bottom:6px; font-size:12px; color:#eef1e4; text-align:center; text-shadow:0 1px 2px #000, 0 0 6px #000; pointer-events:none}
 .zoom{position:absolute; inset:0; z-index:2; background:#0b0d0f; padding:6px; cursor:zoom-out}
@@ -191,7 +194,7 @@ kbd{font-family:var(--body); font-size:12px; background:var(--dash); border:1px 
     <canvas id="yard" aria-label="Bird's-eye view of the car and caravan"></canvas>
     <div class="hud">
       <div class="tag" id="descTag"><b id="lvlName">Straight back</b><span class="goal" id="goal"></span></div>
-      <div class="tag stats"><b id="time">0:00</b><span id="bumps">0 bumps</span></div>
+      <div class="tag stats"><b id="gapNow" class="gap-ok">Gap –</b><span id="closest">Closest –</span><span id="bumps">0 bumps · 0:00</span></div>
     </div>
     <div class="tip" id="tip"></div>
     <button class="autobtn" id="autoBtn" aria-label="Auto demo: watch the computer drive this level">Auto</button>
@@ -297,17 +300,18 @@ kbd{font-family:var(--body); font-size:12px; background:var(--dash); border:1px 
       <ul>
         <li>The <b>hitch meter</b> shows the angle between car and caravan. It turns amber, then red, as you near a jackknife. Past 80° the rig stops until you pull forward to straighten up.</li>
         <li>If you hit something, a <b>red ring</b> marks where, the part that hit flashes red, and a message names it.</li>
-        <li>Stars: ★★★ with no bumps, ★★ for one or two, ★ for more. Your best time per level is saved on this device.</li>
+        <li>Stars reward careful driving, not speed. <b>Gap</b> (top right) is the room between your car or caravan and the nearest hedge, post or van, and <b>Closest</b> is the tightest it got this run. ★★★ means no bumps and keeping at least the level's target gap all the way, ★★ means no bumps and at least half that, ★ means you finished. The targets are shown when you finish. Time only breaks ties.</li>
       </ul>
       <h3>Tips</h3>
       <ul>
         <li>When reversing, imagine holding the bottom of the wheel and move your hand the way you want the caravan to go.</li>
         <li>Make small corrections early. Once the caravan starts to swing, it speeds up.</li>
+        <li>Take it slowly and keep your distance. If the Gap readout turns amber or red, stop and think before going on: it is better to pull forward and try again than to squeeze through.</li>
         <li>Going forwards, swing wide before a bend so the caravan doesn't clip the inside corner.</li>
       </ul>
       <h3>Keyboard</h3>
       <p><kbd>←</kbd> <kbd>→</kbd> steer · <kbd>↑</kbd>, <kbd>W</kbd> or <kbd>Space</kbd> accelerate · <kbd>R</kbd> swap gear · <kbd>D</kbd> drive · <kbd>C</kbd> centre the wheel</p>
-      <p class="credits">Pitch Perfect Towing · version 1.1<br>© 2026 PR Barber. Free to use and share under the MIT License.</p>
+      <p class="credits">Pitch Perfect Towing · version 1.2<br>© 2026 PR Barber. Free to use and share under the MIT License.</p>
     </div>
   </div>
 </div>
@@ -357,23 +361,23 @@ const LEVELS = [
     obs:[wall(1,2.8,32.2,4),wall(31,2.8,32.2,36),wall(1,10.5,24.5,11.7),wall(23.3,10.5,24.5,36)],
     start:{x:12,y:7.25,th:0} },
   { name:"Farm lane bend", goal:"Drive forwards round the tight left-hand bend and stop the whole rig in the chequered box.",
-    W:34, H:36, gear:1, tip:FWD_TIP, tarmac:[[1,28,30,5.2],[25.8,1,5.2,32.2]],
-    bays:[], finish:{x:28.4,y:8,a:-90,l:13,w:5.2},
-    obs:[wall(1,33.2,32.2,34.4),wall(31,1,32.2,34.4),wall(1,26.8,25.8,28),wall(24.6,1,25.8,28)],
-    start:{x:12,y:30.6,th:0} },
+    W:34, H:36, gear:1, tip:FWD_TIP, tarmac:[[1,27.4,30,5.8],[25.2,1,5.8,32.2]],
+    bays:[], finish:{x:28.1,y:8,a:-90,l:13,w:5.8},
+    obs:[wall(1,33.2,32.2,34.4),wall(31,1,32.2,34.4),wall(1,26.2,25.2,27.4),wall(24,1,25.2,27.4)],
+    start:{x:12,y:30.3,th:0} },
   { name:"Village S-bend", goal:"Forwards through a right then a left bend without touching the hedges.",
-    W:51, H:32, gear:1, tip:FWD_TIP, tarmac:[[1,5,28.4,5.4],[24,5,5.4,24.4],[24,24,26,5.4]],
-    bays:[], finish:{x:42.25,y:26.7,a:0,l:13.5,w:5.4},
-    obs:[wall(1,3.8,30.6,5),wall(29.4,3.8,30.6,24),wall(29.4,22.8,50,24),
-         wall(1,10.4,24,11.6),wall(22.8,10.4,24,30.6),wall(22.8,29.4,50,30.6)],
-    start:{x:13,y:7.7,th:0} },
+    W:51, H:33, gear:1, tip:FWD_TIP, tarmac:[[1,5,28.8,5.8],[24,5,5.8,24.8],[24,24,26,5.8]],
+    bays:[], finish:{x:42.25,y:26.9,a:0,l:13.5,w:5.8},
+    obs:[wall(1,3.8,31,5),wall(29.8,3.8,31,24),wall(29.8,22.8,50,24),
+         wall(1,10.8,24,12),wall(22.8,10.8,24,31),wall(22.8,29.8,50,31)],
+    start:{x:13,y:7.9,th:0} },
   { name:"Lane, then pitch", goal:"Take the tight bend up into the yard, then reverse into the pitch on the left, nose east.",
-    W:44, H:38, gear:1, tip:FWD_TIP, tipLater:REV_TIP, tarmac:[[1,30,30,5],[26,16,5,19],[8,2,35,14]],
+    W:44, H:38, gear:1, tip:FWD_TIP, tipLater:REV_TIP, tarmac:[[1,29.2,30,5.8],[25.2,16,5.8,19],[8,2,35,14]],
     bays:[[15,5.0,0],[15,13.0,0]], pitch:[15,9,0],
-    obs:[wall(1,35,32.2,36.2),wall(1,28.8,26,30),wall(24.8,16,26,30),wall(31,16,32.2,36.2),
-         wall(6.8,16,24.8,17.2),wall(32.2,16,43,17.2),wall(6.8,1,8,17.2),
+    obs:[wall(1,35,32.2,36.2),wall(1,28,25.2,29.2),wall(24,16,25.2,29.2),wall(31,16,32.2,36.2),
+         wall(6.8,16,24,17.2),wall(32.2,16,43,17.2),wall(6.8,1,8,17.2),
          {k:'van',x:15,y:5.0,a:0,c:'#7a2f3a'},{k:'van',x:15,y:13.0,a:0,c:'#2f4f7a'}],
-    start:{x:12,y:32.5,th:0} }
+    start:{x:12,y:32.1,th:0} }
 ];
 const KIND = { van:{l:VAN.len,w:VAN.w,H:VAN.H}, bollard:{l:.36,w:.36,H:.9}, hedge:{H:1.8}, shed:{H:2.4} };
 
@@ -401,6 +405,39 @@ function inside(pt, r){
 const hitchOf = s => [s.x - CAR.hitch*Math.cos(s.th), s.y - CAR.hitch*Math.sin(s.th)];
 const carRect = s => ({ cx:s.x+CAR.ctr*Math.cos(s.th), cy:s.y+CAR.ctr*Math.sin(s.th), a:s.th, l:CAR.len, w:CAR.w });
 function vanRect(s){ const h=hitchOf(s); return { cx:h[0]-VAN.ctr*Math.cos(s.ph), cy:h[1]-VAN.ctr*Math.sin(s.ph), a:s.ph, l:VAN.len, w:VAN.w }; }
+// shortest gap (m) between the car or caravan and any hedge, post, shed or parked van
+function rectAABB(r){ const c=Math.abs(Math.cos(r.a)), s=Math.abs(Math.sin(r.a)); const hx=(r.l*c+r.w*s)/2, hy=(r.l*s+r.w*c)/2; return [r.cx-hx,r.cy-hy,r.cx+hx,r.cy+hy]; }
+function ptSeg(p, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1];
+  const t = clamp(((p[0]-a[0])*dx + (p[1]-a[1])*dy)/((dx*dx + dy*dy) || 1), 0, 1);
+  return Math.hypot(p[0]-a[0]-t*dx, p[1]-a[1]-t*dy); }
+function rectGap(A, B){
+  if (overlap(A, B)) return 0;
+  const ca = corners(A), cb = corners(B); let m = 1e9;
+  for (let i=0;i<4;i++){ const j = (i+1)%4;
+    for (const p of ca) m = Math.min(m, ptSeg(p, cb[i], cb[j]));
+    for (const p of cb) m = Math.min(m, ptSeg(p, ca[i], ca[j])); }
+  return m;
+}
+function clearance(s, cap = 1e9){
+  let m = cap;
+  for (const body of [carRect(s), vanRect(s)]){
+    const bb = rectAABB(body);
+    for (const o of obstacles){
+      const ob = o.bb || (o.bb = rectAABB(o.r));
+      const gx = Math.max(ob[0]-bb[2], bb[0]-ob[2], 0), gy = Math.max(ob[1]-bb[3], bb[1]-ob[3], 0);
+      if (Math.hypot(gx, gy) >= m) continue;
+      m = Math.min(m, rectGap(body, o.r));
+    }
+  }
+  return m;
+}
+// star targets for this level, from the closest gap the careful auto route needs
+function gapTargets(){
+  const G = (typeof DEMOS !== 'undefined' && DEMOS[li] && DEMOS[li].gap) || .6;
+  const r = v => Math.max(.05, Math.floor(v/.05 + 1e-6)*.05);
+  return { g3: Math.min(1, r(.7*G)), g2: Math.min(.5, r(.35*G)) };
+}
+const fmtGap = g => g >= 3 ? '3 m+' : `${g.toFixed(2)} m`;
 
 // ---------- state ----------
 let li = 0, L, obstacles, target, S, wheel = 0, gear = -1, gas = false, guide = true;
@@ -408,8 +445,8 @@ let time = 0, started = false, bumps = 0, bumpCool = 0, jack = false, holdWin = 
 let cam = null, bumpMark = null, freeDrive = false, assisted = false;
 let opts = { lhd:false, wheelRight:false, carUp:false };
 try { Object.assign(opts, JSON.parse(localStorage.getItem('pp-opts') || '{}')); } catch(e) {}
-let best = {};
-try { best = JSON.parse(localStorage.getItem('pp-best') || '{}') || {}; } catch(e) { best = {}; }
+let best = {}, gapNow = Infinity, closest = Infinity;
+try { best = JSON.parse(localStorage.getItem('pp-best2') || '{}') || {}; } catch(e) { best = {}; }
 
 function loadLevel(i){
   li = (i + LEVELS.length) % LEVELS.length; L = LEVELS[li];
@@ -437,7 +474,7 @@ function reset(){
       if (!hits(t)) { S = t; break; }
     }
   }
-  wheel = 0; gas = false; time = 0; started = false; bumps = 0; jack = false; holdWin = 0; won = false; freeDrive = false; assisted = false; cam = null; bumpMark = null; el('bumpMsg').hidden = true;
+  wheel = 0; gas = false; time = 0; started = false; bumps = 0; closest = Infinity; jack = false; holdWin = 0; won = false; freeDrive = false; assisted = false; cam = null; bumpMark = null; el('bumpMsg').hidden = true;
   pedal.classList.remove('on');
   setGear(L.gear); el('win').hidden = true; updateBumps();
   el('tip').textContent = L.tip;
@@ -497,7 +534,7 @@ function step(dt){
       if (bumpCool <= 0) {
         bumpMark = { x:pt[0], y:pt[1], t:2.2, who:hit.who };
         const msg = el('bumpMsg'); msg.textContent = `Bump: ${hit.who.toLowerCase()} ${partName(hit.body, pt)} hit the ${OBJ[hit.o.k]}`; msg.hidden = false;
-        bumps++; bumpCool = .8; updateBumps(); if (navigator.vibrate) try{navigator.vibrate(40);}catch(e){} }
+        bumps++; bumpCool = .8; closest = 0; updateBumps(); if (navigator.vibrate) try{navigator.vibrate(40);}catch(e){} }
       break;
     }
   }
@@ -545,20 +582,26 @@ function win(){
     el('nextBtn').textContent = li < LEVELS.length-1 ? 'Next level' : 'Start again';
     el('win').hidden = false; return;
   }
-  const stars = bumps === 0 ? 3 : bumps <= 2 ? 2 : 1;
+  // careful driving scores: no bumps and plenty of room. Time only breaks ties.
+  const T = gapTargets(), cl = bumps ? 0 : closest;
+  const stars = bumps ? 1 : cl >= T.g3 - 1e-6 ? 3 : cl >= T.g2 - 1e-6 ? 2 : 1;
   const prev = best[li];
-  if (!prev || stars > prev.stars || (stars === prev.stars && time < prev.time)) best[li] = { stars, time };
-  try { localStorage.setItem('pp-best', JSON.stringify(best)); } catch(e) {}
+  const better = !prev || stars > prev.stars || (stars === prev.stars && (cl > prev.gap + .005 || (Math.abs(cl - prev.gap) <= .005 && time < prev.time)));
+  if (better) best[li] = { stars, gap:cl, time };
+  try { localStorage.setItem('pp-best2', JSON.stringify(best)); } catch(e) {}
   el('winTitle').textContent = target.rig ? 'Made it!' : 'Pitched!';
   el('stars').innerHTML = [0,1,2].map(i => `<span class="${i<stars?'':'off'}">★</span>`).join('');
   const b = best[li];
-  el('winText').textContent = `${fmt(time)} · ${bumps} bump${bumps===1?'':'s'}  (best ${fmt(b.time)}, ${b.stars}★)`;
+  const why = bumps ? `${bumps} bump${bumps===1?'':'s'}. Keep clear of everything for more stars.`
+    : stars === 3 ? `Closest gap ${fmtGap(cl)}. Well clear all the way.`
+    : `Closest gap ${fmtGap(cl)}. ★★★ needs ${fmtGap(T.g3)} or more${stars === 1 ? `, ★★ needs ${fmtGap(T.g2)}` : ''}.`;
+  el('winText').textContent = `${why} Time ${fmt(time)}. Best: ${'★'.repeat(b.stars)}${b.gap > 0 ? `, closest ${fmtGap(b.gap)}` : ''}.`;
   el('nextBtn').textContent = li < LEVELS.length-1 ? 'Next level' : 'Start again';
   el('lvlNo').textContent = `${li+1} / ${LEVELS.length} ✓`;
   el('win').hidden = false;
 }
 const fmt = t => `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
-function updateBumps(){ el('bumps').textContent = `${bumps} bump${bumps===1?'':'s'}`; }
+function updateBumps(){ lastHud = ''; }
 
 // ---------- canvases ----------
 function el(id){ return document.getElementById(id); }
@@ -958,14 +1001,14 @@ function renderView(view, o){
 // for one of 7 positions". The route is replayed through the same physics as the game, so it is exact.
 const AUTO = { sub:.1, steps:10, wheelRate:420, vFwd:1.6, vRev:.9, wheels:[-540,-397,-238,-111,0,111,238,397,540] };
 const DEMOS = {
-  0:{a:3,slew:600,c:[-5,-4,-5,-5,-5,-6,-6,-6,-5,-5,-5,-5,-6,-4,-2]},
-  1:{a:3,slew:600,c:[-4,-3,-3,-5,-6,-7,-7,-6,-6,-6,-8,-9,-7,-8,-8,-8,-8,-7]},
-  2:{a:3,slew:600,c:[5,-7,-7,-5,-3,-1,-1,-3,-3,-4,-5,-7,-7,-7,-9,-9,-9,-9,-9,-9,-8,-7,-6,-6,-6,-6,-6,-6,-6,-5,-5,-6,-4,-2]},
-  3:{a:3,slew:600,c:[5,5,4,4,3,4,5,5,5,5,5,4,3,1,1,1,2,2,2,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3]},
-  4:{a:3,slew:600,c:[5,5,5,5,5,5,5,5,5,6,7,7,6,7,9,9,9,9,7,5,5,6,6,5,5,5,5,5,5,5,5,5,5,5,5,3]},
-  5:{a:3,slew:600,c:[5,5,5,5,5,6,7,6,4,3,4,2,3,1,2,1,1,1,3,5,4,3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3]},
-  6:{a:3,slew:600,c:[5,4,4,4,4,5,5,5,7,8,9,9,7,9,8,8,8,8,8,6,5,3,4,5,4,4,4,3,2,2,1,1,1,3,3,3,3,4,5,5,5,6,6,5,5,5,5,5,3]},
-  7:{a:3,slew:600,c:[5,5,5,5,5,5,5,6,7,5,4,3,2,1,1,1,1,3,3,3,4,4,3,3,4,5,5,5,5,7,8,7,6,6,6,8,9,9,9,9,9,7,5,3,1,-8,-8,-6,-6,-5,-4,-3,-2,-1,-3,-3,-3,-3,-3,-4,-4,-5,-7,-6,-4]}
+  0:{a:3,slew:600,gap:1.47,c:[-5,-4,-5,-5,-5,-6,-6,-6,-5,-5,-5,-5,-6,-4,-2]},
+  1:{a:3,slew:600,gap:1.55,c:[-4,-3,-3,-5,-6,-7,-7,-6,-6,-6,-8,-9,-7,-7,-9,-9,-8,-6]},
+  2:{a:3,slew:600,gap:0.77,c:[5,-7,-7,-5,-3,-1,-1,-3,-3,-4,-5,-7,-7,-7,-9,-9,-8,-7,-8,-8,1,-9,-9,-7,-6,-4,-5,-4,-6,-5,-6,-5,-5,-5,-5,-3]},
+  3:{a:3,slew:600,gap:1.21,c:[5,5,5,5,5,5,5,5,4,4,2,1,1,2,1,2,3,4,4,3,4,4,4,6,6,5,5,5,5,5,5,5,5,5,5,6,8]},
+  4:{a:3,slew:1500,gap:0.76,c:[5,5,4,4,4,4,4,5,5,6,7,7,9,9,9,9,8,7,7,5,7,7,6,4,4,5,5,6,5,5,5,5,5,5,5,5,5,3]},
+  5:{a:3,slew:600,gap:0.4,c:[3,4,6,6,6,7,7,6,5,3,3,3,1,1,1,1,2,3,3,3,4,3,4,4,4,4,6,6,6,6,5,5,5,5,5,5,5,5,5,3]},
+  6:{a:3,slew:1500,gap:0.37,c:[5,3,3,4,5,5,6,6,6,7,8,9,9,9,9,7,8,8,7,6,5,5,5,5,5,3,4,3,3,2,1,1,1,2,2,4,3,4,4,6,5,5,5,5,5,5,5,5,3]},
+  7:{a:3,slew:600,gap:0.4,c:[5,5,5,5,5,5,5,5,7,6,4,2,1,1,1,1,2,3,3,4,2,3,3,5,6,6,6,6,6,5,5,6,7,8,7,9,9,9,8,8,7,5,5,3,1,-8,-7,-6,-4,-3,-2,-2,-2,-3,-3,-3,-3,-4,-5,-5,-6,-7,-7,-9]}
 }; // @DEMOS
 function planStep(s, dir, w, ds){
   const delta = w/WHEELMAX*MAXSTEER, v = dir*ds;
@@ -1055,7 +1098,8 @@ function demoNotes(segs, items){
   notes.push({ item:items.length, end:true, text: (target.rig
     ? 'The whole car and caravan are inside the box. Stop. '
     : 'The caravan is inside the pitch and square to it. Stop, handbrake on. ')
-    + `Done in ${Math.round(total)} m${gears ? `, with ${gears} gear change${gears>1?'s':''}` : ' without changing gear'}.` });
+    + `Done in ${Math.round(total)} m${gears ? `, with ${gears} gear change${gears>1?'s':''}` : ' without changing gear'}, `
+    + `never closer than ${fmtGap(segs.reduce((m,g) => g.pts.reduce((mm,q) => Math.min(mm, clearance(q, mm)), m), 1e9))} to anything.` });
   return notes;
 }
 function phaseText(p, prev, next, i, reversed){
@@ -1082,6 +1126,7 @@ function phaseText(p, prev, next, i, reversed){
       return pre + `Swinging out to the ${side} first, ${amt}, to make room for the ${sideOf(next.w)} turn coming up. Going wide gives the caravan space to follow without clipping the inside corner.`;
     }
     if (prev && prev.swing) return pre + `Now ${amt} ${side} into the turn. The caravan cuts inside the car, so watch its ${side} side in the ${side} mirror.`;
+    if (prev && prev.dir > 0 && prev.sign === p.sign && Math.abs(p.w) > Math.abs(prev.w)) return pre + `Winding on to ${amt} ${side} to tighten the turn, keeping the car wide so the caravan clears the inside corner.`;
     if (prev && prev.dir > 0 && prev.sign === p.sign) return pre + `Unwinding to ${amt} ${side} as the rig comes out of the bend. The caravan follows the car back into line.`;
     if (prev && prev.dir > 0 && prev.sign && prev.sign !== p.sign) return pre + `${Amt} ${side} for the next bend. Keep watching the caravan's ${side} side in the ${side} mirror.`;
     return pre + `Turning ${amt} ${side}. The caravan's inside wheel takes a tighter line than the car, so the car stays wide until the caravan is clear of the corner.`;
@@ -1176,9 +1221,14 @@ function hud(){
   bar.style.background = mag > 60 ? 'var(--bad)' : mag > 35 ? 'var(--amber)' : 'var(--ok)';
   const turns = Math.abs(wheel)/360;
   el('tip').hidden = yard.h < 230 || !!demo;
-  const str = `${fmt(time)}|${(Math.abs(S.v)*2.237).toFixed(1)}|${Math.round(mag)}|${wheel>3?'R':wheel<-3?'L':'S'}${turns.toFixed(2)}|${jack}`;
+  const gp = Math.round(Math.min(gapNow, 9)*100), cp = Math.round(Math.min(closest, 9)*100);
+  const str = `${fmt(time)}|${(Math.abs(S.v)*2.237).toFixed(1)}|${Math.round(mag)}|${wheel>3?'R':wheel<-3?'L':'S'}${turns.toFixed(2)}|${jack}|${gp}|${cp}|${bumps}`;
   if (str === lastHud) return; lastHud = str;
-  el('time').textContent = fmt(time);
+  const T = gapTargets(), gEl = el('gapNow');
+  gEl.textContent = `Gap ${fmtGap(gapNow)}`;
+  gEl.className = gapNow >= T.g3 ? 'gap-ok' : gapNow >= T.g2 ? 'gap-near' : 'gap-close';
+  el('closest').textContent = `Closest ${closest < 1e8 ? fmtGap(closest) : '–'}`;
+  el('bumps').textContent = `${bumps} bump${bumps===1?'':'s'} · ${fmt(time)}`;
   el('speed').textContent = `${(Math.abs(S.v)*2.237).toFixed(1)} mph`;
   el('hitchVal').textContent = `${Math.round(mag)}°`;
   el('steerVal').textContent = Math.abs(wheel) < 3 ? 'Straight' : `${turns.toFixed(2)} turn ${wheel>0?'R':'L'}`;
@@ -1277,6 +1327,8 @@ function frame(now){
   if (keys['arrowleft']) wheel = clamp(wheel - 360*dt, -WHEELMAX, WHEELMAX);
   if (keys['arrowright']) wheel = clamp(wheel + 360*dt, -WHEELMAX, WHEELMAX);
   if (demo) { if (el('help').hidden) demoTick(dt); } else if (!won) step(dt);
+  gapNow = clearance(S);
+  if (started && !won && !freeDrive && !demo) closest = Math.min(closest, gapNow);
   if (bumpMark){ bumpMark.t -= dt; if (bumpMark.t <= 0){ bumpMark = null; el('bumpMsg').hidden = true; } }
   drawYard(dt); drawCompass(); renderMirror(mirL, -1); renderFront(front); renderMirror(mirR, 1);
   if (zoomed === 'L') renderMirror(zoomV, -1); else if (zoomed === 'R') renderMirror(zoomV, 1); else if (zoomed === 'F') renderFront(zoomV);

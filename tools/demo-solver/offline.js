@@ -60,8 +60,8 @@ const quality = r => r.segs.reduce((a,s)=>a+s.pts.length*.1,0) + 8*r.segs.filter
 
 // level-specific progress scores (higher progress = lower score)
 const prog = {
-  5: s => { const v=G.vanRect(s); return -(v.cx<25.8 ? v.cx : 25.8+(33.2-v.cy)); },
-  6: s => { const v=G.vanRect(s); return -(v.cy<10.4 ? v.cx : v.cy<24 ? 40+(v.cy-5) : 80+v.cx); },
+  5: s => { const v=G.vanRect(s); return -(v.cx<25.2 ? v.cx : 25.2+(33.2-v.cy)); },
+  6: s => { const v=G.vanRect(s); return -(v.cy<10.8 ? v.cx : v.cy<24 ? 40+(v.cy-5) : 80+v.cx); },
   3: s => { const v=G.vanRect(s); return -(v.cx<23 ? v.cx : 23+(34-v.cy)); },
   4: s => { const v=G.vanRect(s); return -(v.cx<24.5 ? v.cx : 24.5+(v.cy-4)); },
 };
@@ -79,7 +79,7 @@ for (const i of only){
     // forward up the lane into the yard, then plan the reverse into the pitch from there
     for (const slew of [600, 1500, 3000]) attempt('two-stage slew '+slew, () => {
       G.setGoal(s => [...G.corners(G.vanRect(s)), ...G.corners(G.carRect(s))].every(p => p[1] < 15.4));
-      const p1 = s => { const v=G.vanRect(s); return -(v.cx<26 ? v.cx : 26+(35-v.cy)); };
+      const p1 = s => { const v=G.vanRect(s); return -(v.cx<25.2 ? v.cx : 25.2+(35-v.cy)); };
       const r1 = beam(s0, 0, 0, p1, { dirs:[1], slew, width:400 }); if (!r1) { G.setGoal(null); return null; }
       // replay stage 1 in full (the last move was cut short at the stage goal) so stage 2 starts where the game will be
       G.setGoal(() => false);

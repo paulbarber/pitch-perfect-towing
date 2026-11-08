@@ -2,7 +2,34 @@
 // Each move is ~1 m of travel in D or R with the wheel heading for one of 7 positions.
 // The wheel can only turn at a realistic rate while moving; when stopped (start or gear change)
 // it may be turned on the spot. A distance map from the target, flowing round hedges, guides the search.
-const AUTO = { sub:.1, steps:10, slew:3000, wheels:[-540,-397,-238,-111,0,111,238,397,540], margin:0, budget:70000, maxHitch:75*D2R };
+const AUTO = { sub:.1, steps:10, slew:3000, wheels:[-540,-397,-238,-111,0,111,238,397,540], margin:0, budget:70000, maxHitch:75*D2R,
+  clearSoft:1.2, clearW:4 };   // routes pay a growing cost for coming within clearSoft metres of anything
+
+// shortest gap (m) between the car or caravan footprint and any obstacle; stops looking beyond cap
+function ptSeg(p, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1];
+  const t = clamp(((p[0]-a[0])*dx + (p[1]-a[1])*dy)/((dx*dx + dy*dy) || 1), 0, 1);
+  return Math.hypot(p[0]-a[0]-t*dx, p[1]-a[1]-t*dy); }
+function rectGap(A, B){
+  if (overlap(A, B)) return 0;
+  const ca = corners(A), cb = corners(B); let m = 1e9;
+  for (let i=0;i<4;i++){ const j = (i+1)%4;
+    for (const p of ca) m = Math.min(m, ptSeg(p, cb[i], cb[j]));
+    for (const p of cb) m = Math.min(m, ptSeg(p, ca[i], ca[j])); }
+  return m;
+}
+function clearance(s, cap = 1e9){
+  let m = cap;
+  for (const body of [carRect(s), vanRect(s)]){
+    const bb = rectAABB(body);
+    for (const o of obstacles){
+      const ob = o.bb || (o.bb = rectAABB(o.r));
+      const gx = Math.max(ob[0]-bb[2], bb[0]-ob[2], 0), gy = Math.max(ob[1]-bb[3], bb[1]-ob[3], 0);
+      if (Math.hypot(gx, gy) >= m) continue;
+      m = Math.min(m, rectGap(body, o.r));
+    }
+  }
+  return m;
+}
 
 function rectAABB(r){ const c=Math.abs(Math.cos(r.a)), s=Math.abs(Math.sin(r.a)); const hx=(r.l*c+r.w*s)/2, hy=(r.l*s+r.w*c)/2; return [r.cx-hx,r.cy-hy,r.cx+hx,r.cy+hy]; }
 function planStep(s, dir, w, ds){
@@ -36,6 +63,7 @@ function runSegment(s0, w0, prevDir, dir, tw, margin, slew){
     const gam = wrap(s.th - s.ph);
     if (margin >= 0 && (Math.abs(gam) > AUTO.maxHitch || planHits(s, margin))) return null;
     g += AUTO.sub * (dir < 0 ? 1.35 : 1) * (1 + .6*(gam/AUTO.maxHitch)**2);
+    if (i % 5 === 4 && AUTO.clearW){ const cl = clearance(s, AUTO.clearSoft); if (cl < AUTO.clearSoft) g += .5*AUTO.clearW*(1 - cl/AUTO.clearSoft)**2; }
     seg.pts.push({ x:s.x, y:s.y, th:s.th, ph:s.ph, w });
     if (parked(s)) return { s, w, g, seg, goal:true };
   }
