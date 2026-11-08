@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pitch Perfect Towing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one fixed screen. Door mirrors on top, bird's-eye caravan site in the middle, wheel and pedal at the bottom.
+   Short landscape screens move the wheel to the left and the pedal to the right of the yard. */
+:root{
+  --dash:#15181b; --panel:#1f2428; --edge:#30383f; --ink:#eceff1; --mute:#97a2ab;
+  --amber:#f4a62a; --ok:#5cc480; --bad:#e85a4d; --glass:#0a0c0e;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ctl:clamp(96px, 16svh, 150px);
+  --mir:clamp(68px, 16svh, 140px);
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0; font-size:14px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--dash); color:var(--ink); font-family:var(--body); overflow:hidden;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.app{
+  position:fixed; inset:0; overflow:hidden;
+  padding-top:calc(env(safe-area-inset-top,0px) + 8px);
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  padding-left:max(16px, env(safe-area-inset-left,0px), calc((100vw - 1100px)/2));
+  padding-right:max(16px, env(safe-area-inset-right,0px), calc((100vw - 1100px)/2));
+  display:grid; gap:8px;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto var(--mir) minmax(0,1fr) var(--ctl);
+  grid-template-areas:"head" "mirrors" "yard" "controls";
+}
+button{font:inherit; color:inherit; cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber); outline-offset:2px}
+
+header{grid-area:head; display:flex; align-items:center; gap:8px; min-width:0}
+.brand{font-family:var(--display); font-weight:700; font-size:19px; letter-spacing:.02em; text-transform:uppercase; line-height:1; white-space:nowrap}
+.brand span{color:var(--amber)}
+.lvlnav{display:flex; align-items:center; gap:2px; margin-right:auto}
+.nav{background:var(--panel); border:1px solid var(--edge); border-radius:8px; width:32px; height:32px; font-size:18px; line-height:1}
+.lvlno{font-family:var(--display); font-weight:600; font-size:16px; min-width:46px; text-align:center; font-variant-numeric:tabular-nums}
+.tool{background:transparent; border:1px solid var(--edge); border-radius:8px; height:32px; padding:0 10px; font-family:var(--display); font-weight:600; font-size:14px; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); white-space:nowrap}
+.tool[aria-pressed="true"]{color:var(--amber); border-color:var(--amber)}
+@media (max-width:430px){ .brand{display:none} }
+.tool.help{width:32px; padding:0; font-size:17px; letter-spacing:0}
+.help-wrap{position:fixed; inset:0; z-index:10; display:grid; place-items:center; background:rgba(8,10,12,.72);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px, env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px, env(safe-area-inset-left,0px))}
+.help-card{background:var(--panel); border:1px solid var(--edge); border-radius:14px; width:min(520px,100%); max-height:100%; display:flex; flex-direction:column; overflow:hidden}
+.help-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 16px; border-bottom:1px solid var(--edge)}
+.help-head h2{margin:0; font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:.03em; text-transform:uppercase}
+.help-body{overflow-y:auto; padding:4px 16px 16px; font-size:14px; line-height:1.5; -webkit-user-select:text; user-select:text}
+.help-body h3{margin:14px 0 4px; font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--amber)}
+.help-body ul{margin:0; padding-left:18px; display:grid; gap:3px}
+.help-body p{margin:0}
+.help-body b{color:var(--ink); font-weight:600}
+.help-body{color:#c9d0d5}
+.credits{margin-top:18px!important; padding-top:10px; border-top:1px solid var(--edge); font-size:12px; color:var(--mute); text-align:center}
+kbd{font-family:var(--body); font-size:12px; background:var(--dash); border:1px solid var(--edge); border-radius:4px; padding:0 5px}
+
+.mirrors{grid-area:mirrors; display:flex; gap:8px; justify-content:center; align-items:stretch; min-height:0}
+.mirror{flex:1 1 0; min-width:0; max-width:260px; height:100%; background:#0b0d0f; padding:4px; border:1px solid #2a3137; box-shadow:inset 0 0 0 2px #050607}
+.screen{flex:1.6 1 0; min-width:0; max-width:460px; height:100%; position:relative; background:#0b0d0f; padding:4px; border-radius:16px 16px 8px 8px; border:1px solid #2a3137}
+.screen canvas{display:block; width:100%; height:100%; border-radius:12px 12px 5px 5px; background:var(--glass)}
+.vlabel{position:absolute; left:10px; bottom:7px; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:rgba(236,239,241,.6); pointer-events:none}
+.mirror.l{border-radius:20px 9px 9px 26px}
+.mirror.r{border-radius:9px 20px 26px 9px}
+.mirror canvas{display:block; width:100%; height:100%; background:var(--glass)}
+.mirror.l canvas{border-radius:16px 6px 6px 22px}
+.mirror.r canvas{border-radius:6px 16px 22px 6px}
+
+.yard{grid-area:yard; position:relative; min-height:0; border-radius:12px; overflow:hidden; background:#4a6531}
+.yard canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
+.hud{position:absolute; left:8px; right:8px; top:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; pointer-events:none}
+.tag{background:rgba(14,17,19,.8); border-radius:8px; padding:4px 9px; font-size:12.5px; line-height:1.25; min-width:0}
+.tag b{font-family:var(--display); font-weight:600; font-size:15px; letter-spacing:.03em; text-transform:uppercase; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tag.off{visibility:hidden}
+.tag.stats{flex:none; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+.goal{color:var(--mute); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.tip{position:absolute; left:8px; right:8px; bottom:6px; font-size:12px; color:#eef1e4; text-align:center; text-shadow:0 1px 2px #000, 0 0 6px #000; pointer-events:none}
+.zoom{position:absolute; inset:0; z-index:2; background:#0b0d0f; padding:6px; cursor:zoom-out}
+.zoom canvas{display:block; width:100%; height:100%; border-radius:14px; background:var(--glass)}
+.zoom .vlabel{left:16px; bottom:14px; font-size:11px; color:rgba(236,239,241,.8); background:rgba(10,12,14,.6); padding:3px 7px; border-radius:6px}
+.mirror,.screen{cursor:zoom-in}
+.autobtn{position:absolute; z-index:3; left:8px; bottom:8px; height:30px; padding:0 12px; border-radius:15px; border:1px solid rgba(120,200,255,.7);
+  background:rgba(14,17,19,.85); color:#9fd4ff; font-family:var(--display); font-weight:600; font-size:14px; letter-spacing:.08em; text-transform:uppercase}
+.tip{padding:0 64px}
+.coach{position:absolute; z-index:5; left:8px; right:8px; bottom:8px; margin:0 auto; max-width:460px; background:#12161a; box-shadow:0 4px 18px rgba(0,0,0,.45);
+  border:1px solid rgba(120,200,255,.7); border-radius:12px; padding:9px 12px 10px; display:grid; gap:6px; -webkit-user-select:text; user-select:text}
+.coach-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.coach-head b{font-family:var(--display); font-weight:600; font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:#9fd4ff}
+.coach-head span{font-size:12px; color:var(--mute); font-variant-numeric:tabular-nums}
+.coach p{margin:0; font-size:13.5px; line-height:1.4; color:var(--ink)}
+.coach-row{display:flex; align-items:center; gap:8px}
+.coach-hint{margin-right:auto; font-size:11.5px; color:var(--mute); min-width:0}
+.coach .btn{height:34px; font-size:15px; padding:0 12px; flex:none}
+@media (max-width:400px){ .coach-hint{display:none} .coach-row{justify-content:flex-end} }
+.bump{z-index:3; position:absolute; left:50%; bottom:26px; transform:translateX(-50%); max-width:calc(100% - 16px); background:rgba(232,90,77,.95); color:#fff; font-weight:600; font-size:13px; padding:5px 12px; border-radius:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none}
+.warn{z-index:3; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--bad); color:#fff; font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:.06em; text-transform:uppercase; padding:6px 14px; border-radius:8px; pointer-events:none}
+
+.win{cursor:pointer; z-index:4; position:absolute; inset:0; display:grid; place-items:center; background:rgba(10,12,14,.55)}
+.card{cursor:default; background:var(--panel); border:1px solid var(--edge); border-radius:14px; padding:16px 18px; width:min(300px, calc(100% - 24px)); text-align:center; display:grid; gap:8px}
+.card h2{margin:0; font-family:var(--display); font-weight:700; font-size:30px; text-transform:uppercase; letter-spacing:.03em; color:var(--amber)}
+.stars{font-size:24px; letter-spacing:6px; color:var(--amber)}
+.stars .off{color:#3d454c}
+.card p{margin:0; color:var(--mute); font-variant-numeric:tabular-nums}
+.card .hint{font-size:12px; opacity:.8}
+.card .row{display:flex; gap:8px; justify-content:center}
+.btn{border:0; border-radius:10px; height:40px; padding:0 16px; font-family:var(--display); font-weight:600; font-size:17px; letter-spacing:.05em; text-transform:uppercase; background:var(--edge)}
+.btn.go{background:var(--amber); color:#1a1408}
+
+.controls{grid-area:controls; display:grid; grid-template-columns:var(--ctl) minmax(0,1fr) auto; grid-template-areas:"wheel read drive"; gap:12px; align-items:center; min-height:0}
+.wheel{grid-area:wheel; width:var(--ctl); height:var(--ctl); touch-action:none; cursor:grab; border-radius:50%}
+.wheel svg{width:100%; height:100%; display:block; will-change:transform}
+.read{grid-area:read; display:flex; flex-direction:column; gap:5px; min-width:0; font-variant-numeric:tabular-nums}
+.read .big{font-family:var(--display); font-weight:700; font-size:22px; line-height:1; white-space:nowrap}
+.read .lbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.read .steer{font-size:12px; color:var(--mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+.meter{height:7px; background:var(--panel); border-radius:4px; position:relative; overflow:hidden}
+.meter i{position:absolute; top:0; bottom:0; left:50%; width:0; background:var(--ok); border-radius:4px}
+.meter::after{content:""; position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--mute)}
+.steerrow{display:flex; gap:6px; align-items:center; min-width:0}
+.centre{touch-action:none; flex:none; background:transparent; border:1px solid var(--edge); border-radius:7px; height:24px; padding:0 7px; font-size:11.5px; color:var(--mute)}
+.drive{grid-area:drive; height:var(--ctl); display:flex; gap:8px}
+.gears{display:flex; flex-direction:column; gap:6px; width:42px}
+.gear{touch-action:none; flex:1; border-radius:10px; border:1px solid var(--edge); background:var(--panel); font-family:var(--display); font-weight:700; font-size:21px; color:var(--mute)}
+.gear[aria-pressed="true"]{background:var(--ink); color:var(--dash); border-color:var(--ink)}
+.gear.rev[aria-pressed="true"]{background:var(--amber); border-color:var(--amber)}
+.pedal{width:58px; border-radius:12px 12px 16px 16px; border:1px solid #3a434b; touch-action:none;
+  background:repeating-linear-gradient(180deg,#2a3137 0 8px,#1c2125 8px 13px); display:flex; align-items:flex-end; justify-content:center; padding-bottom:8px;
+  font-family:var(--display); font-weight:600; font-size:13px; letter-spacing:.12em; color:var(--mute); transition:transform .06s}
+.pedal.on{transform:scale(.96) translateY(2px); border-color:var(--amber); color:var(--amber); box-shadow:0 0 0 2px rgba(244,166,42,.25)}
+
+/* steering wheel on the right */
+.app.wr .controls{grid-template-columns:auto minmax(0,1fr) var(--ctl); grid-template-areas:"drive read wheel"}
+.app.wr .drive{flex-direction:row-reverse}
+.settings{display:grid; gap:10px; margin-top:6px}
+.setrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.setrow span{color:var(--ink); font-weight:500}
+.seg{display:flex; border:1px solid var(--edge); border-radius:9px; overflow:hidden}
+.seg button{border:0; background:transparent; height:34px; padding:0 12px; font-size:13.5px; color:var(--mute)}
+.seg button+button{border-left:1px solid var(--edge)}
+.seg button[aria-pressed="true"]{background:var(--amber); color:#1a1408; font-weight:600}
+/* short landscape phones: controls flank the yard */
+@media (orientation:landscape) and (max-height:560px){
+  :root{ --ctl:clamp(88px, 30svh, 150px); --mir:clamp(56px, 24svh, 120px); }
+  .app{ grid-template-columns:var(--ctl) minmax(0,1fr) auto; grid-template-rows:auto var(--mir) minmax(0,1fr);
+        grid-template-areas:"head head head" "wheel mirrors drive" "read yard drive"; }
+  .app.wr{ grid-template-columns:auto minmax(0,1fr) var(--ctl);
+           grid-template-areas:"head head head" "drive mirrors wheel" "drive yard read"; }
+  .controls{display:contents}
+  .wheel{align-self:start}
+  .read{align-self:start}
+  .drive{align-self:end}
+}
+@media (prefers-reduced-motion:reduce){ .pedal{transition:none} }
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header>
+    <div class="brand">Pitch <span>Perfect</span></div>
+    <div class="lvlnav">
+      <button class="nav" id="prevBtn" aria-label="Previous level">‹</button>
+      <div class="lvlno" id="lvlNo">1 / 6</div>
+      <button class="nav" id="nextLvl" aria-label="Next level">›</button>
+    </div>
+    <button class="tool help" id="helpBtn" aria-label="Help and settings">?</button>
+    <button class="tool" id="guideBtn" aria-pressed="true">Guides on</button>
+    <button class="tool" id="resetBtn">Reset</button>
+  </header>
+
+  <div class="mirrors">
+    <div class="mirror l" id="paneL" role="button" tabindex="0" aria-label="Enlarge left mirror"><canvas id="mirL" aria-label="Left door mirror"></canvas></div>
+    <div class="screen" id="paneF" role="button" tabindex="0" aria-label="Enlarge windscreen view"><canvas id="front" aria-label="View through the windscreen"></canvas><span class="vlabel">Windscreen</span></div>
+    <div class="mirror r" id="paneR" role="button" tabindex="0" aria-label="Enlarge right mirror"><canvas id="mirR" aria-label="Right door mirror"></canvas></div>
+  </div>
+
+  <div class="yard" id="yardBox">
+    <canvas id="yard" aria-label="Bird's-eye view of the car and caravan"></canvas>
+    <div class="hud">
+      <div class="tag" id="descTag"><b id="lvlName">Straight back</b><span class="goal" id="goal"></span></div>
+      <div class="tag stats"><b id="time">0:00</b><span id="bumps">0 bumps</span></div>
+    </div>
+    <div class="tip" id="tip"></div>
+    <button class="autobtn" id="autoBtn" aria-label="Auto demo: watch the computer drive this level">Auto</button>
+    <div class="coach" id="coach" hidden role="status" aria-live="polite">
+      <div class="coach-head"><b>Auto demo</b><span id="coachStep"></span></div>
+      <p id="coachText"></p>
+      <div class="coach-row"><span class="coach-hint">Touch the wheel or GAS to take over</span><button class="btn" id="coachTake">Take over</button><button class="btn go" id="coachNext">Next</button></div>
+    </div>
+    <div class="zoom" id="zoom" hidden role="button" aria-label="Close enlarged view"><canvas id="zoomCv"></canvas><span class="vlabel" id="zoomLbl"></span></div>
+    <div class="warn" id="warn" hidden>Jackknife!</div>
+    <div class="bump" id="bumpMsg" role="status" hidden></div>
+    <div class="win" id="win" hidden>
+      <div class="card">
+        <h2 id="winTitle">Pitched!</h2>
+        <div class="stars" id="stars"></div>
+        <p id="winText"></p>
+        <div class="row"><button class="btn" id="retryBtn">Retry</button><button class="btn go" id="nextBtn">Next level</button></div>
+        <p class="hint">Tap outside this box to keep driving</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="wheel" id="wheel" role="slider" aria-label="Steering wheel" tabindex="0" aria-valuemin="-540" aria-valuemax="540" aria-valuenow="0">
+      <svg id="wheelSvg" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#0d0f11" stroke-width="22"/>
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#2c3338" stroke-width="16"/>
+        <path d="M100 100 L18 112 M100 100 L182 112 M100 100 L100 186" stroke="#2c3338" stroke-width="16" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="28" fill="#20262b" stroke="#3a434b" stroke-width="3"/>
+        <circle cx="100" cy="100" r="9" fill="#3a434b"/>
+        <rect x="94" y="7" width="12" height="18" rx="3" fill="#f4a62a"/>
+      </svg>
+    </div>
+    <div class="read">
+      <div><div class="lbl">Speed</div><div class="big" id="speed">0.0 mph</div></div>
+      <div><div class="lbl">Hitch <span id="hitchVal">0°</span></div><div class="meter"><i id="hitchBar"></i></div></div>
+      <div class="steerrow"><span class="steer" id="steerVal">Straight</span><button class="centre" id="centreBtn">Centre</button></div>
+    </div>
+    <div class="drive">
+      <div class="gears">
+        <button class="gear" id="gD" aria-pressed="false">D</button>
+        <button class="gear rev" id="gR" aria-pressed="true">R</button>
+      </div>
+      <div class="pedal" id="pedal" role="button" aria-label="Accelerator (hold)">GAS</div>
+    </div>
+  </div>
+</div>
+
+<div class="help-wrap" id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="help-card">
+    <div class="help-head"><h2 id="helpTitle">Help &amp; settings</h2><button class="btn go" id="helpClose">Got it</button></div>
+    <div class="help-body">
+      <h3>Settings</h3>
+      <div class="settings">
+        <div class="setrow"><span>Car</span>
+          <div class="seg" role="group" aria-label="Driving position">
+            <button id="optRHD" aria-pressed="true">Right-hand drive</button><button id="optLHD" aria-pressed="false">Left-hand drive</button>
+          </div></div>
+        <div class="setrow"><span>Steering wheel</span>
+          <div class="seg" role="group" aria-label="Steering wheel position">
+            <button id="optWL" aria-pressed="true">Left of screen</button><button id="optWR" aria-pressed="false">Right of screen</button>
+          </div></div>
+        <div class="setrow"><span>Overhead view</span>
+          <div class="seg" role="group" aria-label="Overhead view orientation">
+            <button id="optNU" aria-pressed="true">Map fixed</button><button id="optCU" aria-pressed="false">Car points up</button>
+          </div></div>
+      </div>
+      <p style="margin-top:6px;font-size:12.5px">Drive side moves your seat, and so the windscreen view, to that side of the car. Put the wheel on the side of your stronger hand. <b>Car points up</b> keeps the rig centred and turns the map around it, so left and right on screen always match the driver's left and right.</p>
+      <h3>The goal</h3>
+      <ul>
+        <li><b>Reversing levels:</b> get the whole caravan inside the amber pitch, lined up with it, then stop. The arrow shows which way the caravan's nose should face.</li>
+        <li><b>Forward levels:</b> stop with the whole car and caravan inside the chequered box.</li>
+        <li>The pitch or box turns green when you're in the right place. Come to a stop and hold for a moment to finish.</li>
+      </ul>
+      <h3>Driving</h3>
+      <ul>
+        <li><b>Steering wheel:</b> drag it round to steer, up to 1½ turns each way. <b>Double-tap the wheel</b> to straighten it, or press <b>Centre</b>.</li>
+        <li><b>D / R:</b> choose forwards (Drive) or Reverse.</li>
+        <li><b>GAS:</b> hold to move. Let go to brake.</li>
+        <li>‹ and › at the top change level. <b>Reset</b> restarts the current level.</li>
+      </ul>
+      <h3>Views</h3>
+      <ul>
+        <li><b>Tap a mirror or the windscreen</b> to enlarge it. Tap it again to go back to the top-down view. You can keep driving while it's enlarged.</li>
+        <li>On bigger levels the top-down view follows the car and caravan.</li>
+        <li><b>Tap the top-down view</b> to hide or show the level description.</li>
+        <li>For a driver's-eye overhead view, set <b>Overhead view</b> to <b>Car points up</b> in Settings. A small compass shows north (red).</li>
+      </ul>
+      <h3>Auto demo</h3>
+      <ul>
+        <li>Tap <b>Auto</b> (bottom-left of the top-down view) to watch the computer drive the level. It restarts the level first.</li>
+        <li>It stops at each key point to explain what it is doing with the wheel. Tap <b>Next</b> to carry on.</li>
+        <li>The <b>blue line</b> shows where the caravan will go for the rest of the demo.</li>
+        <li>Touch the wheel, GAS or a gear button, or tap <b>Take over</b>, to drive on yourself from wherever the rig is. Runs finished after a demo aren't scored.</li>
+      </ul>
+      <h3>Guides</h3>
+      <ul>
+        <li>The <b>amber dotted line</b> shows where the back of the caravan will go when reversing, or where the front of the car will go when driving forwards, if you keep the wheel where it is.</li>
+        <li>Going forwards, the <b>white dotted lines</b> show where the caravan's rear corners will sweep. Watch them cut inside on bends.</li>
+        <li><b>Guides on / off</b> switches these lines.</li>
+      </ul>
+      <h3>Hitch angle and bumps</h3>
+      <ul>
+        <li>The <b>hitch meter</b> shows the angle between car and caravan. It turns amber, then red, as you near a jackknife. Past 80° the rig stops until you pull forward to straighten up.</li>
+        <li>If you hit something, a <b>red ring</b> marks where, the part that hit flashes red, and a message names it.</li>
+        <li>Stars: ★★★ with no bumps, ★★ for one or two, ★ for more. Your best time per level is saved on this device.</li>
+      </ul>
+      <h3>Tips</h3>
+      <ul>
+        <li>When reversing, imagine holding the bottom of the wheel and move your hand the way you want the caravan to go.</li>
+        <li>Make small corrections early. Once the caravan starts to swing, it speeds up.</li>
+        <li>Going forwards, swing wide before a bend so the caravan doesn't clip the inside corner.</li>
+      </ul>
+      <h3>Keyboard</h3>
+      <p><kbd>←</kbd> <kbd>→</kbd> steer · <kbd>↑</kbd>, <kbd>W</kbd> or <kbd>Space</kbd> accelerate · <kbd>R</kbd> swap gear · <kbd>D</kbd> drive · <kbd>C</kbd> centre the wheel</p>
+      <p class="credits">Pitch Perfect Towing · version 1.1<br>© 2026 PR Barber. All rights reserved.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const D2R = Math.PI/180, TAU = Math.PI*2;
+const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+// Rig geometry in metres. Car origin = rear axle; caravan hangs off a towball behind it.
+const CAR = { L:2.8, hitch:1.0, len:4.6, w:1.85, ctr:1.4, H:1.45 };
+const VAN = { D:4.5, len:6.0, w:2.3, ctr:4.2, H:2.6 };
+const MAXSTEER = 34*D2R, WHEELMAX = 540, JACK = 80*D2R;
+const BAY = { l:7.6, w:3.2 };
+const REV_TIP = "Reversing: move the bottom of the wheel the way you want the caravan to go.";
+const FWD_TIP = "Forwards: the caravan cuts inside the car on bends, so swing wide before you turn.";
+const wall = (x0,y0,x1,y1) => ({ k:'hedge', x:(x0+x1)/2, y:(y0+y1)/2, a:0, l:x1-x0, w:y1-y0 });
+
+const LEVELS = [
+  { name:"Straight back", goal:"You start at a slight angle. Straighten up as you reverse into the amber pitch.",
+    W:40, H:26, gear:-1, tip:REV_TIP, tarmac:[[2,5,36,16]],
+    bays:[[10,9.0,0],[10,17.0,0]], pitch:[10,13,0],
+    obs:[{k:'van',x:10,y:9.0,a:0,c:'#2f4f7a'},{k:'van',x:10,y:17.0,a:0,c:'#3f6b3a'},
+         {k:'bollard',x:3.2,y:6.2},{k:'bollard',x:3.2,y:19.8}],
+    start:{x:30,y:13,th:0} },
+  { name:"Swing into the pitch", goal:"Back off the road into the pitch on your right, nose facing the road.",
+    W:44, H:32, gear:-1, tip:REV_TIP, tarmac:[[1,7,42,9],[6,16,28,11]],
+    bays:[[15.6,21,-90],[24.4,21,-90]], pitch:[20,21,-90],
+    obs:[{k:'van',x:15.6,y:21,a:-90,c:'#7a2f3a'},{k:'van',x:24.4,y:21,a:-90,c:'#2f4f7a'},
+         {k:'bollard',x:6.6,y:16.6},{k:'bollard',x:33.4,y:16.6},{k:'hedge',x:20,y:28.6,a:0,l:30,w:1.2}],
+    start:{x:36,y:11.5,th:0} },
+  { name:"Through the gateway", goal:"Reverse through the farm gate and into the pitch beside the shed.",
+    W:44, H:34, gear:-1, tip:REV_TIP, tarmac:[[1,6,42,8],[12,17.2,16,15]],
+    bays:[[14.6,27.5,-90]], pitch:[20,27.5,-90],
+    obs:[wall(1,16,18,17.2),wall(22,16,43,17.2),
+         {k:'van',x:14.6,y:27.5,a:-90,c:'#3f6b3a'},{k:'shed',x:25.8,y:27,a:0,l:3.2,w:4.5}],
+    start:{x:37,y:10,th:0} },
+  { name:"Wide left turn", goal:"Drive forwards round an easy left turn and stop the whole rig in the chequered box.",
+    W:34, H:37, gear:1, tip:FWD_TIP, tarmac:[[1,26,30,8],[23,1,8,33]],
+    bays:[], finish:{x:27,y:8,a:-90,l:13,w:8},
+    obs:[wall(1,34,32.2,35.2),wall(31,1,32.2,35.2),wall(1,24.8,23,26),wall(21.8,1,23,26)],
+    start:{x:12,y:30,th:0} },
+  { name:"Right turn", goal:"A slightly narrower lane: turn right and stop in the chequered box.",
+    W:34, H:37, gear:1, tip:FWD_TIP, tarmac:[[1,4,30,6.5],[24.5,4,6.5,32]],
+    bays:[], finish:{x:27.75,y:28,a:90,l:13,w:6.5},
+    obs:[wall(1,2.8,32.2,4),wall(31,2.8,32.2,36),wall(1,10.5,24.5,11.7),wall(23.3,10.5,24.5,36)],
+    start:{x:12,y:7.25,th:0} },
+  { name:"Farm lane bend", goal:"Drive forwards round the tight left-hand bend and stop the whole rig in the chequered box.",
+    W:34, H:36, gear:1, tip:FWD_TIP, tarmac:[[1,28,30,5.2],[25.8,1,5.2,32.2]],
+    bays:[], finish:{x:28.4,y:8,a:-90,l:13,w:5.2},
+    obs:[wall(1,33.2,32.2,34.4),wall(31,1,32.2,34.4),wall(1,26.8,25.8,28),wall(24.6,1,25.8,28)],
+    start:{x:12,y:30.6,th:0} },
+  { name:"Village S-bend", goal:"Forwards through a right then a left bend without touching the hedges.",
+    W:51, H:32, gear:1, tip:FWD_TIP, tarmac:[[1,5,28.4,5.4],[24,5,5.4,24.4],[24,24,26,5.4]],
+    bays:[], finish:{x:42.25,y:26.7,a:0,l:13.5,w:5.4},
+    obs:[wall(1,3.8,30.6,5),wall(29.4,3.8,30.6,24),wall(29.4,22.8,50,24),
+         wall(1,10.4,24,11.6),wall(22.8,10.4,24,30.6),wall(22.8,29.4,50,30.6)],
+    start:{x:13,y:7.7,th:0} },
+  { name:"Lane, then pitch", goal:"Take the tight bend up into the yard, then reverse into the pitch on the left, nose east.",
+    W:44, H:38, gear:1, tip:FWD_TIP, tipLater:REV_TIP, tarmac:[[1,30,30,5],[26,16,5,19],[8,2,35,14]],
+    bays:[[15,5.0,0],[15,13.0,0]], pitch:[15,9,0],
+    obs:[wall(1,35,32.2,36.2),wall(1,28.8,26,30),wall(24.8,16,26,30),wall(31,16,32.2,36.2),
+         wall(6.8,16,24.8,17.2),wall(32.2,16,43,17.2),wall(6.8,1,8,17.2),
+         {k:'van',x:15,y:5.0,a:0,c:'#7a2f3a'},{k:'van',x:15,y:13.0,a:0,c:'#2f4f7a'}],
+    start:{x:12,y:32.5,th:0} }
+];
+const KIND = { van:{l:VAN.len,w:VAN.w,H:VAN.H}, bollard:{l:.36,w:.36,H:.9}, hedge:{H:1.8}, shed:{H:2.4} };
+
+// ---------- geometry helpers ----------
+function corners(r){
+  const c=Math.cos(r.a), s=Math.sin(r.a), hl=r.l/2, hw=r.w/2;
+  return [[r.cx+c*hl-s*hw, r.cy+s*hl+c*hw],[r.cx+c*hl+s*hw, r.cy+s*hl-c*hw],
+          [r.cx-c*hl+s*hw, r.cy-s*hl-c*hw],[r.cx-c*hl-s*hw, r.cy-s*hl+c*hw]];
+}
+function overlap(A,B){
+  const ca=corners(A), cb=corners(B);
+  for (const r of [A,B]) for (const ang of [r.a, r.a+Math.PI/2]) {
+    const ax=Math.cos(ang), ay=Math.sin(ang);
+    let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;
+    for (const p of ca){ const d=p[0]*ax+p[1]*ay; if(d<a0)a0=d; if(d>a1)a1=d; }
+    for (const p of cb){ const d=p[0]*ax+p[1]*ay; if(d<b0)b0=d; if(d>b1)b1=d; }
+    if (a1<b0 || b1<a0) return false;
+  }
+  return true;
+}
+function inside(pt, r){
+  const dx=pt[0]-r.cx, dy=pt[1]-r.cy, c=Math.cos(r.a), s=Math.sin(r.a);
+  return Math.abs(dx*c+dy*s) <= r.l/2 && Math.abs(-dx*s+dy*c) <= r.w/2;
+}
+const hitchOf = s => [s.x - CAR.hitch*Math.cos(s.th), s.y - CAR.hitch*Math.sin(s.th)];
+const carRect = s => ({ cx:s.x+CAR.ctr*Math.cos(s.th), cy:s.y+CAR.ctr*Math.sin(s.th), a:s.th, l:CAR.len, w:CAR.w });
+function vanRect(s){ const h=hitchOf(s); return { cx:h[0]-VAN.ctr*Math.cos(s.ph), cy:h[1]-VAN.ctr*Math.sin(s.ph), a:s.ph, l:VAN.len, w:VAN.w }; }
+
+// ---------- state ----------
+let li = 0, L, obstacles, target, S, wheel = 0, gear = -1, gas = false, guide = true;
+let time = 0, started = false, bumps = 0, bumpCool = 0, jack = false, holdWin = 0, won = false;
+let cam = null, bumpMark = null, freeDrive = false, assisted = false;
+let opts = { lhd:false, wheelRight:false, carUp:false };
+try { Object.assign(opts, JSON.parse(localStorage.getItem('pp-opts') || '{}')); } catch(e) {}
+let best = {};
+try { best = JSON.parse(localStorage.getItem('pp-best') || '{}') || {}; } catch(e) { best = {}; }
+
+function loadLevel(i){
+  li = (i + LEVELS.length) % LEVELS.length; L = LEVELS[li];
+  obstacles = L.obs.map(o => {
+    const k = KIND[o.k];
+    return { k:o.k, c:o.c, H:k.H, r:{ cx:o.x, cy:o.y, a:(o.a||0)*D2R, l:o.l||k.l, w:o.w||k.w } };
+  });
+  const W=L.W, H=L.H;
+  [[W/2,.5,W,1],[W/2,H-.5,W,1],[.5,H/2,1,H],[W-.5,H/2,1,H]].forEach(b =>
+    obstacles.push({ k:'hedge', H:1.8, r:{ cx:b[0], cy:b[1], a:0, l:b[2], w:b[3] } }));
+  if (L.finish) { const f = L.finish; target = { cx:f.x, cy:f.y, a:f.a*D2R, l:f.l, w:f.w, rig:true }; }
+  else target = { cx:L.pitch[0], cy:L.pitch[1], a:L.pitch[2]*D2R, l:BAY.l, w:BAY.w, rig:false };
+  reset();
+  el('lvlName').textContent = L.name;
+  el('goal').textContent = L.goal;
+  el('lvlNo').textContent = `${li+1} / ${LEVELS.length}${best[li] ? ' ✓' : ''}`;
+}
+function reset(){
+  S = { x:L.start.x, y:L.start.y, th:L.start.th*D2R, ph:L.start.th*D2R, v:0 };
+  {
+    // random start angle of 1° to 5° either side, so no start is ever dead straight
+    for (let tries = 0; tries < 10; tries++){
+      const a = (1 + Math.random()*4) * (Math.random() < .5 ? -1 : 1) * D2R;
+      const t = { ...S, th:L.start.th*D2R + a, ph:L.start.th*D2R + a };
+      if (!hits(t)) { S = t; break; }
+    }
+  }
+  wheel = 0; gas = false; time = 0; started = false; bumps = 0; jack = false; holdWin = 0; won = false; freeDrive = false; assisted = false; cam = null; bumpMark = null; el('bumpMsg').hidden = true;
+  pedal.classList.remove('on');
+  setGear(L.gear); el('win').hidden = true; updateBumps();
+  el('tip').textContent = L.tip;
+  if (demo) stopDemo();
+  el('autoBtn').hidden = !DEMOS[li];
+}
+
+// ---------- physics ----------
+function integrate(s, v, dt){
+  const delta = wheel/WHEELMAX*MAXSTEER;
+  const thd = v/CAR.L*Math.tan(delta);
+  const phd = (v*Math.sin(s.th-s.ph) - CAR.hitch*thd*Math.cos(s.th-s.ph)) / VAN.D;
+  s.x += v*Math.cos(s.th)*dt; s.y += v*Math.sin(s.th)*dt; s.th += thd*dt; s.ph += phd*dt;
+}
+function hits(s){
+  const cr = carRect(s), vr = vanRect(s);
+  for (const o of obstacles){
+    if (overlap(cr,o.r)) return { who:'Car', body:cr, o };
+    if (overlap(vr,o.r)) return { who:'Caravan', body:vr, o };
+  }
+  return null;
+}
+function contact(A, B){
+  const pts = corners(A).filter(p => inside(p,B)).concat(corners(B).filter(p => inside(p,A)));
+  if (pts.length) return [pts.reduce((a,p)=>a+p[0],0)/pts.length, pts.reduce((a,p)=>a+p[1],0)/pts.length];
+  const dx=A.cx-B.cx, dy=A.cy-B.cy, c=Math.cos(B.a), sn=Math.sin(B.a);
+  const lx=clamp(dx*c+dy*sn,-B.l/2,B.l/2), ly=clamp(-dx*sn+dy*c,-B.w/2,B.w/2);
+  return [B.cx+lx*c-ly*sn, B.cy+lx*sn+ly*c];
+}
+function partName(r, p){
+  const dx=p[0]-r.cx, dy=p[1]-r.cy, c=Math.cos(r.a), s=Math.sin(r.a);
+  const lx=(dx*c+dy*s)/(r.l/2), ly=(-dx*s+dy*c)/(r.w/2);
+  const end = lx > .45 ? 'front' : lx < -.45 ? 'rear' : '';
+  const side = ly > .5 ? 'right' : ly < -.5 ? 'left' : '';
+  if (end && side) return `${end}-${side} corner`;
+  if (end) return end;
+  return side ? `${side} side` : 'side';
+}
+const OBJ = { hedge:'hedge', van:'parked caravan', shed:'shed', bollard:'bollard' };
+function step(dt){
+  const vt = gas ? (gear>0 ? 2.4 : -1.15) : 0;
+  if (gas && S.v*vt < 0) S.v += -Math.sign(S.v)*Math.min(Math.abs(S.v), 5*dt);
+  else { const rate = gas ? 1.5 : 4.5; S.v += clamp(vt - S.v, -rate*dt, rate*dt); }
+  if (Math.abs(S.v) > .02) started = true;
+  bumpCool -= dt;
+  const n = 4, h = dt/n;
+  for (let i=0;i<n;i++){
+    const prev = { ...S };
+    const ha0 = Math.abs(wrap(S.th-S.ph));
+    integrate(S, S.v, h);
+    const ha1 = Math.abs(wrap(S.th-S.ph));
+    if (ha1 > JACK && ha1 > ha0) { Object.assign(S, prev); S.v = 0; jack = true; break; }
+    const hit = hits(S);
+    if (hit) {
+      const pt = contact(hit.body, hit.o.r);
+      Object.assign(S, prev); S.v = 0;
+      if (bumpCool <= 0) {
+        bumpMark = { x:pt[0], y:pt[1], t:2.2, who:hit.who };
+        const msg = el('bumpMsg'); msg.textContent = `Bump: ${hit.who.toLowerCase()} ${partName(hit.body, pt)} hit the ${OBJ[hit.o.k]}`; msg.hidden = false;
+        bumps++; bumpCool = .8; updateBumps(); if (navigator.vibrate) try{navigator.vibrate(40);}catch(e){} }
+      break;
+    }
+  }
+  if (Math.abs(wrap(S.th-S.ph)) < JACK - 5*D2R) jack = false;
+  if (started && !won && !freeDrive) time += dt;
+  if (L.tipLater && S.y < 17) el('tip').textContent = L.tipLater;
+  if (!freeDrive && parked() && Math.abs(S.v) < .04 && !gas) { holdWin += dt; if (holdWin > .7 && !won) win(); }
+  else holdWin = 0;
+}
+function parked(st = S){
+  const vr = vanRect(st);
+  if (target.rig) {
+    return [...corners(vr), ...corners(carRect(st))].every(p => inside(p, target))
+      && Math.abs(wrap(st.ph - target.a)) < 15*D2R && Math.abs(wrap(st.th - target.a)) < 15*D2R;
+  }
+  return corners(vr).every(p => inside(p, target)) && Math.abs(wrap(st.ph - target.a)) < 10*D2R;
+}
+function predict(){
+  const s = { ...S }, dir = gear, pts = [], ds = .12;
+  for (let i=0;i<70;i++){
+    const ha0 = Math.abs(wrap(s.th-s.ph));
+    integrate(s, dir, ds);
+    if (Math.abs(wrap(s.th-s.ph)) > JACK && Math.abs(wrap(s.th-s.ph)) > ha0) break;
+    const h = hitchOf(s), back = VAN.ctr + VAN.len/2;
+    pts.push(dir < 0 ? [h[0]-back*Math.cos(s.ph), h[1]-back*Math.sin(s.ph)] : [s.x+3.7*Math.cos(s.th), s.y+3.7*Math.sin(s.th)]);
+  }
+  return pts;
+}
+// forwards guide: where the caravan's inside rear corners will sweep
+function predictVan(){
+  const s = { ...S }, L1 = [], R1 = [], ds = .15;
+  for (let i=0;i<60;i++){
+    integrate(s, 1, ds);
+    const c = corners(vanRect(s));
+    L1.push(c[2]); R1.push(c[3]);
+  }
+  return [L1, R1];
+}
+function win(){
+  won = true; S.v = 0; gas = false; pedal.classList.remove('on');
+  if (assisted){
+    el('winTitle').textContent = target.rig ? 'Made it!' : 'Pitched!';
+    el('stars').innerHTML = '';
+    el('winText').textContent = 'You finished after the auto demo, so this run is not scored. Retry for stars.';
+    el('nextBtn').textContent = li < LEVELS.length-1 ? 'Next level' : 'Start again';
+    el('win').hidden = false; return;
+  }
+  const stars = bumps === 0 ? 3 : bumps <= 2 ? 2 : 1;
+  const prev = best[li];
+  if (!prev || stars > prev.stars || (stars === prev.stars && time < prev.time)) best[li] = { stars, time };
+  try { localStorage.setItem('pp-best', JSON.stringify(best)); } catch(e) {}
+  el('winTitle').textContent = target.rig ? 'Made it!' : 'Pitched!';
+  el('stars').innerHTML = [0,1,2].map(i => `<span class="${i<stars?'':'off'}">★</span>`).join('');
+  const b = best[li];
+  el('winText').textContent = `${fmt(time)} · ${bumps} bump${bumps===1?'':'s'}  (best ${fmt(b.time)}, ${b.stars}★)`;
+  el('nextBtn').textContent = li < LEVELS.length-1 ? 'Next level' : 'Start again';
+  el('lvlNo').textContent = `${li+1} / ${LEVELS.length} ✓`;
+  el('win').hidden = false;
+}
+const fmt = t => `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+function updateBumps(){ el('bumps').textContent = `${bumps} bump${bumps===1?'':'s'}`; }
+
+// ---------- canvases ----------
+function el(id){ return document.getElementById(id); }
+const pedal = el('pedal');
+const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+function makeView(id){
+  const cv = el(id), v = { cv, ctx: cv.getContext('2d'), w:1, h:1, d:1 };
+  const fit = () => { const r = cv.getBoundingClientRect(); v.d = DPR(); v.w = Math.max(1,r.width); v.h = Math.max(1,r.height);
+    cv.width = Math.round(v.w*v.d); cv.height = Math.round(v.h*v.d); };
+  new ResizeObserver(fit).observe(cv); fit(); return v;
+}
+const yard = makeView('yard'), mirL = makeView('mirL'), mirR = makeView('mirR'), front = makeView('front'), zoomV = makeView('zoomCv');
+let zoomed = null;
+const ZLBL = { L:'Left mirror · tap to close', F:'Windscreen · tap to close', R:'Right mirror · tap to close' };
+function setZoom(z){ zoomed = (zoomed === z) ? null : z; el('zoom').hidden = !zoomed; if (zoomed) el('zoomLbl').textContent = ZLBL[zoomed]; }
+[['paneL','L'],['paneF','F'],['paneR','R']].forEach(([id,z]) => { const p = el(id); p.addEventListener('click', () => setZoom(z)); p.addEventListener('keydown', e => { if (e.key==='Enter') setZoom(z); }); });
+el('zoom').addEventListener('click', () => setZoom(zoomed));
+
+function rr(c, x, y, w, h, r){ c.beginPath(); if (c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); }
+function polyPath(c, pts){ c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); c.closePath(); }
+
+function drawVan(c, r, stripe, player){
+  c.save(); c.translate(r.cx, r.cy); c.rotate(r.a);
+  c.fillStyle = '#111';
+  c.fillRect(-.65, -1.3, .7, .24); c.fillRect(-.65, 1.06, .7, .24);
+  if (player){
+    c.strokeStyle = '#2a2a2a'; c.lineWidth = .1; c.beginPath();
+    c.moveTo(2.9,-.75); c.lineTo(4.15,0); c.lineTo(2.9,.75); c.stroke();
+    c.fillStyle = '#333'; rr(c, 4.0,-.12,.3,.24,.06); c.fill();
+  }
+  rr(c, -3, -1.15, 6, 2.3, .38); c.fillStyle = '#efe8d4'; c.fill();
+  c.strokeStyle = '#bdb39a'; c.lineWidth = .06; c.stroke();
+  c.fillStyle = 'rgba(160,190,205,.55)'; c.fillRect(-1.3,-.38,.8,.76); c.fillRect(.7,-.3,.55,.6);
+  c.fillStyle = '#3c4a54'; rr(c, 2.55,-.9,.38,1.8,.12); c.fill();
+  c.strokeStyle = stripe; c.lineWidth = .14; c.beginPath();
+  c.moveTo(-2.8,-1.06); c.lineTo(2.5,-1.06); c.moveTo(-2.8,1.06); c.lineTo(2.5,1.06); c.stroke();
+  c.restore();
+}
+function drawCar(c, s){
+  const delta = wheel/WHEELMAX*MAXSTEER;
+  c.save(); c.translate(s.x, s.y); c.rotate(s.th);
+  c.fillStyle = '#0e0e0e';
+  [[0,-.84],[0,.84]].forEach(p => c.fillRect(p[0]-.32,p[1]-.12,.64,.24));
+  [[2.8,-.84],[2.8,.84]].forEach(p => { c.save(); c.translate(p[0],p[1]); c.rotate(delta); c.fillRect(-.32,-.12,.64,.24); c.restore(); });
+  c.strokeStyle = '#2b2b2b'; c.lineWidth = .1; c.beginPath(); c.moveTo(-.9,0); c.lineTo(-1,0); c.stroke();
+  c.fillStyle = '#c9ccce'; c.beginPath(); c.arc(-1,0,.07,0,TAU); c.fill();
+  rr(c, -.9, -.925, 4.6, 1.85, .45); c.fillStyle = '#2b66a8'; c.fill();
+  c.fillStyle = '#1b2731'; polyPath(c, [[1.55,-.8],[2.25,-.72],[2.25,.72],[1.55,.8]]); c.fill();
+  polyPath(c, [[-.55,-.72],[-.1,-.78],[-.1,.78],[-.55,.72]]); c.fill();
+  c.fillStyle = '#3678c0'; rr(c, -.1,-.78,1.65,1.56,.15); c.fill();
+  c.fillStyle = '#2b66a8'; c.fillRect(1.82,-1.08,.22,.18); c.fillRect(1.82,.9,.22,.18);
+  c.fillStyle = '#ffe9a8'; c.fillRect(3.55,-.78,.12,.32); c.fillRect(3.55,.46,.12,.32);
+  c.fillStyle = gear<0 && Math.abs(S.v)>.02 ? '#ffffff' : '#c0392b'; c.fillRect(-.9,-.8,.1,.3); c.fillRect(-.9,.5,.1,.3);
+  c.restore();
+}
+function drawObstacle(c, o){
+  const r = o.r;
+  if (o.k === 'van') return drawVan(c, r, o.c || '#555', false);
+  c.save(); c.translate(r.cx, r.cy); c.rotate(r.a);
+  if (o.k === 'hedge'){
+    c.fillStyle = '#10240c'; c.fillRect(-r.l/2-.1,-r.w/2-.1,r.l+.2,r.w+.2);
+    c.fillStyle = '#1e4a16'; c.fillRect(-r.l/2,-r.w/2,r.l,r.w);
+    c.fillStyle = '#2f7a22';
+    const along = r.l >= r.w, len = Math.max(r.l,r.w), n = Math.floor(len/0.9);
+    for (let i=0;i<n;i++){ const t = -len/2 + (i+.5)*len/n, j = ((i*37)%7)/7 - .5;
+      c.beginPath(); along ? c.arc(t, j*r.w*.3, Math.min(r.w,r.l)*.38, 0, TAU) : c.arc(j*r.l*.3, t, Math.min(r.w,r.l)*.38, 0, TAU); c.fill(); }
+    c.fillStyle = 'rgba(140,200,90,.55)';
+    for (let i=0;i<n;i+=2){ const t = -len/2 + (i+.5)*len/n; c.beginPath(); along ? c.arc(t-.1, -.12, Math.min(r.w,r.l)*.14, 0, TAU) : c.arc(-.12, t-.1, Math.min(r.w,r.l)*.14, 0, TAU); c.fill(); }
+  } else if (o.k === 'shed'){
+    c.fillStyle = '#6e5136'; c.fillRect(-r.l/2,-r.w/2,r.l,r.w);
+    c.strokeStyle = '#4c3824'; c.lineWidth = .08;
+    for (let y=-r.w/2+.3; y<r.w/2; y+=.3){ c.beginPath(); c.moveTo(-r.l/2,y); c.lineTo(r.l/2,y); c.stroke(); }
+    c.strokeStyle = '#8a6a48'; c.lineWidth = .12; c.beginPath(); c.moveTo(0,-r.w/2); c.lineTo(0,r.w/2); c.stroke();
+  } else if (o.k === 'bollard'){
+    c.fillStyle = '#e5e0d0'; c.beginPath(); c.arc(0,0,.18,0,TAU); c.fill();
+    c.strokeStyle = '#c0392b'; c.lineWidth = .06; c.stroke();
+  }
+  c.restore();
+}
+// Kerb lines: each tarmac edge inset 0.25 m, dropped wherever another tarmac area continues beyond it.
+let edgeCache = null;
+function edgeLines(){
+  if (edgeCache && edgeCache.L === L) return edgeCache.segs;
+  const IN = .25, PROBE = .6, STEP = .05, segs = [];
+  const inShrunk = (x,y,t,skip) => L.tarmac.some((o,i) => i !== skip && x > o[0]+IN-1e-6 && x < o[0]+o[2]-IN+1e-6 && y > o[1]+IN-1e-6 && y < o[1]+o[3]-IN+1e-6);
+  L.tarmac.forEach((t,ti) => {
+    const x0=t[0]+IN, x1=t[0]+t[2]-IN, y0=t[1]+IN, y1=t[1]+t[3]-IN;
+    const edges = [[[x0,y0],[x1,y0],[0,-1]],[[x1,y0],[x1,y1],[1,0]],[[x1,y1],[x0,y1],[0,1]],[[x0,y1],[x0,y0],[-1,0]]];
+    for (const [a,b,n] of edges){
+      const len = Math.hypot(b[0]-a[0], b[1]-a[1]), N = Math.max(1, Math.round(len/STEP));
+      let runStart = null, prev = null;
+      for (let i=0;i<=N;i++){
+        const u = i/N, x = a[0]+(b[0]-a[0])*u, y = a[1]+(b[1]-a[1])*u;
+        const keep = !inShrunk(x+n[0]*PROBE, y+n[1]*PROBE, t, ti);
+        if (keep && !runStart) runStart = [x,y];
+        if (!keep && runStart){ segs.push([runStart, prev]); runStart = null; }
+        prev = [x,y];
+      }
+      if (runStart) segs.push([runStart, prev]);
+    }
+  });
+  edgeCache = { L, segs: segs.filter(sg => Math.hypot(sg[1][0]-sg[0][0], sg[1][1]-sg[0][1]) > .1) };
+  return edgeCache.segs;
+}
+function bayLines(b){ const cs = corners(b); return cs.map((p,i) => [p, cs[(i+1)%4]]); }
+
+function drawYard(dt){
+  const { ctx:c, w, h, d } = yard;
+  c.setTransform(d,0,0,d,0,0);
+  c.fillStyle = '#4a6531'; c.fillRect(0,0,w,h);
+  // fit the whole site if it's readable, otherwise follow the rig at a playable zoom
+  const padT = 46, padB = 20, padX = 6;
+  const fitS = Math.min((w-padX*2)/L.W, (h-padT-padB)/L.H);
+  const followS = Math.min(w, h) / 26;
+  let s, ox, oy;
+  if (opts.carUp) {
+    // driver's-eye overhead: rig centred, car always pointing up the screen
+    s = Math.min(w, h) / 24;
+    const vr = vanRect(S), cr = carRect(S), mx = (vr.cx + cr.cx)/2, my = (vr.cy + cr.cy)/2;
+    c.setTransform(d,0,0,d,0,0);
+    c.translate(w/2, padT*0.5 + (h - padT*0.5)/2);
+    c.rotate(-Math.PI/2 - S.th);
+    c.scale(s, s);
+    c.translate(-mx, -my);
+  } else if (fitS >= followS*0.85) {
+    s = fitS; ox = (w - L.W*s)/2; oy = padT + (h-padT-padB - L.H*s)/2;
+  } else {
+    s = followS;
+    const vr = vanRect(S), cr = carRect(S);
+    const tx = (vr.cx + cr.cx)/2 + Math.cos(S.th)*2*Math.sign(gear), ty = (vr.cy + cr.cy)/2 + Math.sin(S.th)*2*Math.sign(gear);
+    const vw = w/s, vh = (h - padT*0.5)/s;
+    const cx = vw >= L.W ? L.W/2 : clamp(tx, vw/2 - 1, L.W - vw/2 + 1);
+    const cy = vh >= L.H ? L.H/2 : clamp(ty, vh/2 - 1, L.H - vh/2 + 1);
+    if (!cam) cam = { x:cx, y:cy };
+    const k = Math.min(1, dt*3); cam.x += (cx-cam.x)*k; cam.y += (cy-cam.y)*k;
+    ox = w/2 - cam.x*s; oy = padT*0.5 + (h - padT*0.5)/2 - cam.y*s;
+  }
+  if (!opts.carUp) c.setTransform(d*s,0,0,d*s,d*ox,d*oy);
+  for (let x=0;x<L.W;x+=2){ c.fillStyle = (x/2)%2 ? '#56733a' : '#5c7a3e'; c.fillRect(x,0,2,L.H); }
+  for (const t of L.tarmac){ c.fillStyle = '#5a5e62'; c.fillRect(t[0],t[1],t[2],t[3]); }
+  c.strokeStyle = '#d8dacf'; c.lineWidth = .14;
+  for (const seg of edgeLines()){ c.beginPath(); c.moveTo(seg[0][0],seg[0][1]); c.lineTo(seg[1][0],seg[1][1]); c.stroke(); }
+  c.strokeStyle = '#e9e5d6'; c.lineWidth = .12;
+  for (const b of L.bays) for (const [p,q] of bayLines({cx:b[0],cy:b[1],a:b[2]*D2R,l:BAY.l,w:BAY.w})){ c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke(); }
+  // target: amber pitch, or a chequered finish box
+  const good = parked();
+  c.save(); c.translate(target.cx, target.cy); c.rotate(target.a);
+  const tl = target.l, tw = target.w;
+  c.fillStyle = good ? 'rgba(92,196,128,.3)' : 'rgba(244,166,42,.16)'; c.fillRect(-tl/2,-tw/2,tl,tw);
+  if (target.rig){
+    const sq = tw/8;
+    for (let i=0;i<8;i++) for (let j=0;j<2;j++){ c.fillStyle = (i+j)%2 ? '#f2f0e8' : '#1d1f21'; c.fillRect(tl/2 - (j+1)*sq, -tw/2 + i*sq, sq, sq); }
+  }
+  c.setLineDash([.55,.35]); c.strokeStyle = good ? '#5cc480' : '#f4a62a'; c.lineWidth = .16; c.strokeRect(-tl/2,-tw/2,tl,tw); c.setLineDash([]);
+  if (!target.rig){
+    c.fillStyle = good ? '#5cc480' : '#f4a62a';
+    polyPath(c, [[tl/2-.4,0],[tl/2-1.2,-.6],[tl/2-1.0,0],[tl/2-1.2,.6]]); c.fill();
+  }
+  c.restore();
+  for (const o of obstacles) drawObstacle(c, o);
+  if (guide && !won){
+    c.lineWidth = .14; c.setLineDash([.35,.3]);
+    const pts = predict();
+    if (pts.length > 1){
+      c.strokeStyle = 'rgba(255,214,120,.9)';
+      c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); c.stroke();
+    }
+    if (gear > 0){
+      c.strokeStyle = 'rgba(255,255,255,.55)';
+      for (const line of predictVan()){ c.beginPath(); line.forEach((p,i)=> i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); c.stroke(); }
+    }
+    c.setLineDash([]);
+  }
+  drawDemoPath(c);
+  drawVan(c, vanRect(S), '#9b3a3a', true);
+  drawCar(c, S);
+  if (bumpMark){
+    const b = bumpMark, a = Math.min(1, b.t), body = b.who === 'Car' ? carRect(S) : vanRect(S);
+    c.save(); c.translate(body.cx, body.cy); c.rotate(body.a);
+    c.fillStyle = `rgba(232,90,77,${.35*a})`; c.fillRect(-body.l/2,-body.w/2,body.l,body.w); c.restore();
+    const ph = (2.2 - b.t) * 3;
+    c.strokeStyle = `rgba(232,90,77,${a})`; c.lineWidth = .18;
+    c.beginPath(); c.arc(b.x, b.y, .5 + (ph % 1)*1.4, 0, TAU); c.stroke();
+    c.fillStyle = `rgba(255,255,255,${a})`; c.beginPath(); c.arc(b.x, b.y, .22, 0, TAU); c.fill();
+    c.fillStyle = `rgba(232,90,77,${a})`; c.beginPath(); c.arc(b.x, b.y, .14, 0, TAU); c.fill();
+  }
+}
+
+function drawCompass(){
+  if (!opts.carUp) return;
+  const { ctx:c, w, h, d } = yard, r = 13, x = w - r - 10, y = h - r - (el('tip').hidden ? 10 : 28);
+  c.setTransform(d,0,0,d,0,0); c.translate(x, y);
+  c.fillStyle = 'rgba(14,17,19,.75)'; c.beginPath(); c.arc(0,0,r,0,TAU); c.fill();
+  c.rotate(-Math.PI/2 - S.th);
+  c.rotate(-Math.PI/2);
+  c.fillStyle = '#e85a4d'; c.beginPath(); c.moveTo(r*.75,0); c.lineTo(0,-r*.3); c.lineTo(0,r*.3); c.closePath(); c.fill();
+  c.fillStyle = '#d8dacf'; c.beginPath(); c.moveTo(-r*.75,0); c.lineTo(0,-r*.3); c.lineTo(0,r*.3); c.closePath(); c.fill();
+}
+// ---------- door mirrors: true ground-plane perspective from each mirror ----------
+const LIGHT = (() => { const x=.45, y=-.8, m=Math.hypot(x,y); return [x/m, y/m]; })();
+const col = (rgb,k) => `rgb(${rgb[0]*k|0},${rgb[1]*k|0},${rgb[2]*k|0})`;
+
+function renderMirror(view, side){
+  const ct = Math.cos(S.th), st = Math.sin(S.th);
+  renderView(view, { M:[S.x + ct*1.85 - st*side*1.08, S.y + st*1.85 + ct*side*1.08], al:S.th + Math.PI - side*11*D2R,
+    camH:1.15, hz:.3, fovH:27, fovV:16, flip:true, car:true });
+}
+function renderFront(view){
+  const ct = Math.cos(S.th), st = Math.sin(S.th);
+  // driver's eye: 1.75 m ahead of the rear axle, 0.38 m to the driving side of centre
+  const seat = opts.lhd ? -.38 : .38;
+  renderView(view, { M:[S.x + ct*1.75 - st*seat, S.y + st*1.75 + ct*seat], al:S.th, camH:1.25, hz:.36, fovH:36, fovV:24, flip:false, car:false, cab:true });
+}
+function renderView(view, o){
+  const { ctx:c, w, h, d } = view;
+  c.setTransform(d,0,0,d,0,0);
+  const M = o.M, al = o.al;
+  const f = [Math.cos(al), Math.sin(al)], r = [-f[1], f[0]];
+  const F = Math.min(w/(2*Math.tan(o.fovH*D2R)), h/(2*Math.tan(o.fovV*D2R))), hz = h*o.hz, camH = o.camH, cx = w/2, NEAR = .12;
+  const sx = o.flip ? -1 : 1;
+  const loc = p => { const dx=p[0]-M[0], dy=p[1]-M[1]; return [dx*f[0]+dy*f[1], dx*r[0]+dy*r[1], p[2]||0]; };
+  const scr = q => [cx + sx*q[1]/q[0]*F, hz + (camH-q[2])/q[0]*F];
+  function fill3(pts, style, stroke){
+    const lp = pts.map(loc), out = [];
+    for (let i=0;i<lp.length;i++){
+      const a = lp[i], b = lp[(i+1)%lp.length], ai = a[0]>=NEAR, bi = b[0]>=NEAR;
+      if (ai) out.push(a);
+      if (ai !== bi){ const t=(NEAR-a[0])/(b[0]-a[0]); out.push([NEAR, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]); }
+    }
+    if (out.length < 3) return;
+    c.beginPath(); out.forEach((q,i)=>{ const p = scr(q); i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1]); }); c.closePath();
+    c.fillStyle = style; c.fill();
+    if (stroke){ c.strokeStyle = stroke; c.lineWidth = 1; c.lineJoin = 'round'; c.stroke(); }
+  }
+  const HAZE = [196,212,214];
+  const shadeFog = (rgb, k, dist) => { const fz = clamp((dist-5)/40, 0, .65);
+    return `rgb(${(rgb[0]*k*(1-fz)+HAZE[0]*fz)|0},${(rgb[1]*k*(1-fz)+HAZE[1]*fz)|0},${(rgb[2]*k*(1-fz)+HAZE[2]*fz)|0})`; };
+  const g = c.createLinearGradient(0,0,0,hz); g.addColorStop(0,'#8fb3cf'); g.addColorStop(1,'#d6e2e6');
+  c.fillStyle = g; c.fillRect(0,0,w,hz+1);
+  c.fillStyle = '#4c6a3a'; c.beginPath(); c.moveTo(0,hz);
+  for (let x=0;x<=w;x+=3){ const az = al + Math.atan(sx*(x-cx)/F);
+    const th = (6 + 3.5*Math.sin(az*7) + 2.5*Math.sin(az*13+1) + 1.5*Math.sin(az*31)) * h/110;
+    c.lineTo(x, hz - Math.max(1,th)); }
+  c.lineTo(w,hz); c.closePath(); c.fill();
+  c.fillStyle = '#5a7a3e'; c.fillRect(0,hz,w,h-hz);
+  for (const t of L.tarmac) fill3([[t[0],t[1]],[t[0]+t[2],t[1]],[t[0]+t[2],t[1]+t[3]],[t[0],t[1]+t[3]]], '#62666a');
+  const line = (p,q,style) => { const dx=q[0]-p[0], dy=q[1]-p[1], m=Math.hypot(dx,dy)||1, nx=-dy/m*.07, ny=dx/m*.07;
+    fill3([[p[0]+nx,p[1]+ny],[q[0]+nx,q[1]+ny],[q[0]-nx,q[1]-ny],[p[0]-nx,p[1]-ny]], style); };
+  for (const b of L.bays) for (const [p,q] of bayLines({cx:b[0],cy:b[1],a:b[2]*D2R,l:BAY.l,w:BAY.w})) line(p,q,'#e9e5d6');
+  for (const [p,q] of edgeLines()) line(p,q,'#d8dacf');
+  const good = parked();
+  fill3(corners(target), good ? 'rgba(92,196,128,.35)' : 'rgba(244,166,42,.22)');
+  for (const [p,q] of bayLines(target)) line(p,q, good ? '#5cc480' : '#f4a62a');
+  const boxes = obstacles.map(o => ({ r:o.r, z0:0, z1:o.H,
+      rgb: o.k==='hedge' ? [36,92,28] : o.k==='shed' ? [118,86,58] : o.k==='bollard' ? [225,220,205] : [236,230,212],
+      stripe: o.k==='van' ? (o.c||'#555') : null, hedge: o.k==='hedge' }));
+  boxes.push({ r:vanRect(S), z0:.3, z1:VAN.H, rgb:[239,232,212], stripe:'#9b3a3a', win:true });
+  if (o.car) boxes.push({ r:carRect(S), z0:.25, z1:CAR.H, rgb:[43,102,168] });
+  for (const b of boxes){
+    const dx=M[0]-b.r.cx, dy=M[1]-b.r.cy, c0=Math.cos(b.r.a), s0=Math.sin(b.r.a);
+    const lx = clamp(dx*c0+dy*s0, -b.r.l/2, b.r.l/2), ly = clamp(-dx*s0+dy*c0, -b.r.w/2, b.r.w/2);
+    b.dist = Math.hypot(dx*c0+dy*s0-lx, -dx*s0+dy*c0-ly);
+  }
+  boxes.sort((a,b) => b.dist - a.dist);
+  for (const b of boxes){
+    if (b.dist > 70) continue;
+    const cs = corners(b.r);
+    const edge = shadeFog([10,22,8], 1, b.dist);
+    if (b.z1 <= camH) fill3(cs.map(p=>[p[0],p[1],b.z1]), shadeFog(b.rgb,1.05,b.dist), edge);
+    for (let i=0;i<4;i++){
+      const p = cs[i], q = cs[(i+1)%4], mx=(p[0]+q[0])/2, my=(p[1]+q[1])/2;
+      let nx = mx-b.r.cx, ny = my-b.r.cy; const nm = Math.hypot(nx,ny)||1; nx/=nm; ny/=nm;
+      if ((M[0]-mx)*nx + (M[1]-my)*ny <= 0) continue;
+      const near = clamp(1.25 - b.dist/30, .85, 1.25);
+      const k = (.5 + .45*(nx*LIGHT[0] + ny*LIGHT[1] + 1)/2) * near;
+      fill3([[p[0],p[1],b.z0],[q[0],q[1],b.z0],[q[0],q[1],b.z1],[p[0],p[1],b.z1]], shadeFog(b.rgb,k,b.dist), edge);
+      if (b.hedge){ const tz = b.z1-.12;
+        fill3([[p[0],p[1],tz],[q[0],q[1],tz],[q[0],q[1],b.z1],[p[0],p[1],b.z1]], shadeFog([120,180,80],near,b.dist)); }
+      if (b.stripe) fill3([[p[0],p[1],1.0],[q[0],q[1],1.0],[q[0],q[1],1.16],[p[0],p[1],1.16]], b.stripe);
+      if (b.win) { const t0=.18, t1=.32; fill3([[p[0]+(q[0]-p[0])*t0,p[1]+(q[1]-p[1])*t0,1.45],[p[0]+(q[0]-p[0])*t1,p[1]+(q[1]-p[1])*t1,1.45],
+                      [p[0]+(q[0]-p[0])*t1,p[1]+(q[1]-p[1])*t1,2.05],[p[0]+(q[0]-p[0])*t0,p[1]+(q[1]-p[1])*t0,2.05]], '#3c4a54'); }
+    }
+  }
+  if (bumpMark){
+    const q = loc([bumpMark.x, bumpMark.y, .6]);
+    if (q[0] > NEAR){ const p = scr(q), a = Math.min(1,bumpMark.t), rad = Math.max(4, 1.2/q[0]*F);
+      c.strokeStyle = `rgba(232,90,77,${a})`; c.lineWidth = 3; c.beginPath(); c.arc(p[0],p[1],rad,0,TAU); c.stroke(); }
+  }
+  if (o.cab){
+    // bonnet as a real projected surface, then dashboard and A-pillars
+        c.fillStyle = '#16191c'; c.beginPath(); c.moveTo(0,h); c.lineTo(0,h*.96); c.quadraticCurveTo(w*.5,h*.92,w,h*.96); c.lineTo(w,h); c.closePath(); c.fill();
+    c.fillStyle = '#0f1113';
+    c.beginPath(); c.moveTo(0,0); c.lineTo(w*.06,0); c.lineTo(w*.015,h*.93); c.lineTo(0,h*.93); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(w,0); c.lineTo(w*.94,0); c.lineTo(w*.985,h*.93); c.lineTo(w,h*.93); c.closePath(); c.fill();
+    c.fillStyle = '#0f1113'; c.fillRect(w*.44, 0, w*.12, h*.07);
+    return;
+  }
+  const vg = c.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.7);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.35)'); c.fillStyle = vg; c.fillRect(0,0,w,h);
+}
+
+// ---------- auto demo ----------
+// Each level has a pre-solved route: a list of ~1 m moves, each "drive in D or R with the wheel heading
+// for one of 7 positions". The route is replayed through the same physics as the game, so it is exact.
+const AUTO = { sub:.1, steps:10, wheelRate:420, vFwd:1.6, vRev:.9, wheels:[-540,-397,-238,-111,0,111,238,397,540] };
+const DEMOS = {
+  0:{a:3,slew:600,c:[-5,-4,-5,-5,-5,-6,-6,-6,-5,-5,-5,-5,-6,-4,-2]},
+  1:{a:3,slew:600,c:[-4,-3,-3,-5,-6,-7,-7,-6,-6,-6,-8,-9,-7,-8,-8,-8,-8,-7]},
+  2:{a:3,slew:600,c:[5,-7,-7,-5,-3,-1,-1,-3,-3,-4,-5,-7,-7,-7,-9,-9,-9,-9,-9,-9,-8,-7,-6,-6,-6,-6,-6,-6,-6,-5,-5,-6,-4,-2]},
+  3:{a:3,slew:600,c:[5,5,4,4,3,4,5,5,5,5,5,4,3,1,1,1,2,2,2,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3]},
+  4:{a:3,slew:600,c:[5,5,5,5,5,5,5,5,5,6,7,7,6,7,9,9,9,9,7,5,5,6,6,5,5,5,5,5,5,5,5,5,5,5,5,3]},
+  5:{a:3,slew:600,c:[5,5,5,5,5,6,7,6,4,3,4,2,3,1,2,1,1,1,3,5,4,3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3]},
+  6:{a:3,slew:600,c:[5,4,4,4,4,5,5,5,7,8,9,9,7,9,8,8,8,8,8,6,5,3,4,5,4,4,4,3,2,2,1,1,1,3,3,3,3,4,5,5,5,6,6,5,5,5,5,5,3]},
+  7:{a:3,slew:600,c:[5,5,5,5,5,5,5,6,7,5,4,3,2,1,1,1,1,3,3,3,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,-3,1,1,1,1,1,2,2,2,2,1,1,2,3,2,1,2,2,2,1,1,1,1,2,3,5,7,8,-1,-1,-2,-4,-6,-8,-8,-9,-7]}
+}; // @DEMOS
+function planStep(s, dir, w, ds){
+  const delta = w/WHEELMAX*MAXSTEER, v = dir*ds;
+  const thd = v/CAR.L*Math.tan(delta);
+  const phd = (v*Math.sin(s.th-s.ph) - CAR.hitch*thd*Math.cos(s.th-s.ph))/VAN.D;
+  s.x += v*Math.cos(s.th); s.y += v*Math.sin(s.th); s.th += thd; s.ph += phd;
+}
+function runSegment(s0, w0, prevDir, dir, tw, slew){
+  const stopped = prevDir === 0 || dir !== prevDir;
+  let w = w0;
+  const seg = { dir, tw, w0, turnOnSpot:false, pts:[] };
+  if (stopped && tw !== w){ w = tw; seg.turnOnSpot = true; }
+  const s = { ...s0 };
+  for (let i=0;i<AUTO.steps;i++){
+    w = clamp(tw, w - slew*AUTO.sub, w + slew*AUTO.sub);
+    planStep(s, dir, w, AUTO.sub);
+    seg.pts.push({ x:s.x, y:s.y, th:s.th, ph:s.ph, w });
+    if (parked(s)) return { s, w, seg, goal:true };
+  }
+  return { s, w, seg, goal:false };
+}
+function buildDemo(li){
+  const D = DEMOS[li]; if (!D) return null;
+  const a = (L.start.th + D.a)*D2R;
+  let s = { x:L.start.x, y:L.start.y, th:a, ph:a }, w = 0, prev = 0;
+  const start = { ...s }, segs = [];
+  for (const v of D.c){
+    const dir = Math.sign(v), tw = AUTO.wheels[Math.abs(v) - 1];
+    const r = runSegment(s, w, prev, dir, tw, D.slew);
+    segs.push(r.seg); s = r.s; w = r.w; prev = dir;
+    if (r.goal) break;
+  }
+  // timeline items: on-the-spot wheel turns and 10 cm moves, each with a duration
+  const items = []; let pose = { ...start, w:0 };
+  for (const g of segs){
+    g.item = items.length;
+    if (g.turnOnSpot){ items.push({ dir:g.dir, from:pose, to:{ ...pose, w:g.tw }, dt:Math.abs(g.tw - pose.w)/AUTO.wheelRate, v:0 }); pose = { ...pose, w:g.tw }; }
+    for (const p of g.pts){
+      const vmax = g.dir > 0 ? AUTO.vFwd : AUTO.vRev;
+      const dt = Math.max(AUTO.sub/vmax, Math.abs(p.w - pose.w)/AUTO.wheelRate);
+      items.push({ dir:g.dir, from:pose, to:p, dt, v:g.dir*AUTO.sub/dt }); pose = p;
+    }
+  }
+  return { start, segs, items, notes: demoNotes(segs, items) };
+}
+
+// ---------- commentary ----------
+const deg = r => Math.round(Math.abs(r)/D2R/5)*5;
+const sideOf = w => w > 0 ? 'right' : 'left';
+function amount(w){ const a = Math.abs(w); return a >= 500 ? 'full lock' : a >= 330 ? 'just over a full turn' : a >= 200 ? 'about two-thirds of a turn' : 'a third of a turn'; }
+function demoNotes(segs, items){
+  // group moves into phases: same gear and wheel on the same side
+  const sgn = w => Math.abs(w) < 90 ? 0 : Math.sign(w);
+  let ph = [];
+  segs.forEach((g,k) => {
+    const last = ph[ph.length-1];
+    if (last && last.dir === g.dir && last.sign === sgn(g.tw)) { last.segs.push(g); return; }
+    ph.push({ dir:g.dir, sign:sgn(g.tw), segs:[g] });
+  });
+  const len = p => p.segs.reduce((a,g) => a + g.pts.length*AUTO.sub, 0);
+  // fold short wiggles into their neighbours unless they change gear
+  for (let pass=0; pass<4; pass++){
+    for (let i=1;i<ph.length;i++){
+      const p = ph[i], q = ph[i-1];
+      if (p.dir === q.dir && len(p) < 1.6){ q.segs.push(...p.segs); ph.splice(i,1); i--; }
+    }
+    for (let i=1;i<ph.length;i++){ const p = ph[i], q = ph[i-1];
+      if (p.dir === q.dir && p.sign === q.sign){ q.segs.push(...p.segs); ph.splice(i,1); i--; } }
+  }
+  while (ph.length > 9){
+    let bi = -1, bl = 1e9;
+    for (let i=1;i<ph.length;i++) if (ph[i].dir === ph[i-1].dir && len(ph[i]) < bl){ bl = len(ph[i]); bi = i; }
+    if (bi < 0) break;
+    ph[bi-1].segs.push(...ph[bi].segs); ph.splice(bi,1);
+  }
+  ph.forEach(p => {
+    p.sign = sgn(p.segs.reduce((a,g) => Math.abs(g.tw) > Math.abs(a) ? g.tw : a, 0));
+    p.w = p.segs.reduce((a,g) => (Math.sign(g.tw) === p.sign && Math.abs(g.tw) > Math.abs(a)) ? g.tw : a, 0);
+    const a = p.segs[0], b = p.segs[p.segs.length-1];
+    const s0 = items[a.item].from, s1 = b.pts[b.pts.length-1];
+    p.g0 = wrap(s0.th - s0.ph); p.g1 = wrap(s1.th - s1.ph); p.len = len(p); p.item = a.item;
+  });
+  let reversed = false;
+  const notes = ph.map((p,i) => { const t = phaseText(p, ph[i-1], ph[i+1], i, reversed); if (p.dir < 0) reversed = true; return { item:p.item, text:t }; });
+  const total = segs.reduce((a,g) => a + g.pts.length*AUTO.sub, 0);
+  const gears = ph.filter((p,i) => i && p.dir !== ph[i-1].dir).length;
+  notes.push({ item:items.length, end:true, text: (target.rig
+    ? 'The whole car and caravan are inside the box. Stop. '
+    : 'The caravan is inside the pitch and square to it. Stop, handbrake on. ')
+    + `Done in ${Math.round(total)} m${gears ? `, with ${gears} gear change${gears>1?'s':''}` : ' without changing gear'}.` });
+  return notes;
+}
+function phaseText(p, prev, next, i, reversed){
+  const G0 = deg(p.g0), G1 = deg(p.g1), side = sideOf(p.w), amt = amount(p.w);
+  const tailSide = p.g0 > 0 ? 'right' : 'left';
+  let pre = '';
+  if (i === 0) pre = p.dir > 0 ? 'Starting in D. ' : 'Starting in R. ';
+  else if (prev.dir !== p.dir) pre = p.dir > 0
+    ? (G0 >= 25 ? `Stop and change to D. The caravan is at ${G0}° to the car, too sharp to fix in reverse, so I'm pulling forward to straighten up. `
+                : 'Stop and change to D. ')
+    : 'Stop and change to R. ';
+  if (p.dir > 0){
+    if (!p.sign){
+      if (next && next.dir > 0 && next.sign) return pre + "Wheel straight, staying out wide. The caravan cuts inside the car on a bend, so I'll turn late, once the front of the car is well into the turn.";
+      if (next && next.dir < 0) return pre + 'Pulling forward first, wheel straight, to get the car and caravan in line and in position to reverse.';
+      if (G0 >= 10) return pre + 'Wheel straight. Driving forward lets the caravan straighten up behind the car.';
+      return pre + 'Driving straight ahead with the wheel centred.';
+    }
+    const Amt = amt[0].toUpperCase() + amt.slice(1);
+    if (reversed) return pre + `Pulling forward with ${amt} ${side} to swing the rig round and line the caravan up with the pitch for the next go back.`;
+    if (next && next.dir > 0 && next.sign && next.sign !== p.sign && Math.abs(next.w) > Math.abs(p.w)){
+      p.swing = true;
+      return pre + `Swinging out to the ${side} first, ${amt}, to make room for the ${sideOf(next.w)} turn coming up. Going wide gives the caravan space to follow without clipping the inside corner.`;
+    }
+    if (prev && prev.swing) return pre + `Now ${amt} ${side} into the turn. The caravan cuts inside the car, so watch its ${side} side in the ${side} mirror.`;
+    if (prev && prev.dir > 0 && prev.sign === p.sign) return pre + `Unwinding to ${amt} ${side} as the rig comes out of the bend. The caravan follows the car back into line.`;
+    if (prev && prev.dir > 0 && prev.sign && prev.sign !== p.sign) return pre + `${Amt} ${side} for the next bend. Keep watching the caravan's ${side} side in the ${side} mirror.`;
+    return pre + `Turning ${amt} ${side}. The caravan's inside wheel takes a tighter line than the car, so the car stays wide until the caravan is clear of the corner.`;
+  }
+  // reversing
+  if (!p.sign){
+    if (G0 < 6 && G1 < 6) return pre + 'Wheel straight and reversing in a straight line. Car and caravan are lined up, so no steering is needed.';
+    if (G1 < G0) return pre + `Wheel back to the centre. The caravan is at ${G0}° and the car is following it round, so the angle drops to ${G1}°.`;
+    return pre + `Wheel centred. The caravan is at ${G0}° to the car, so in reverse it keeps swinging to the ${tailSide}. I'll correct it in a moment.`;
+  }
+  const tailGo = p.w > 0 ? 'left' : 'right';
+  if (prev && prev.dir < 0 && prev.sign && prev.sign !== p.sign && G0 >= 8)
+    return pre + `The caravan has swung to ${G0}°. Turning the other way, ${amt} ${side}, to stop the swing and bring the car round behind it.`;
+  if (G1 > G0 + 4)
+    return pre + `${amt[0].toUpperCase() + amt.slice(1)} ${side}. In reverse that pushes the back of the car to the ${side}, so the caravan's tail swings to the ${tailGo}.`
+      + (i <= 1 ? ' The rule: move the bottom of the wheel the way you want the caravan to go.' : '');
+  if (Math.max(G0, G1) < 10)
+    return pre + `A small correction: ${amt} ${side} nudges the caravan's tail to the ${tailGo} to line it up with the pitch.`;
+  if (G1 < G0 - 4)
+    return pre + `${amt[0].toUpperCase() + amt.slice(1)} ${side} to follow the caravan round. The car swings in behind it and the angle drops from ${G0}° to ${G1}°.`;
+  return pre + `Holding ${amt} ${side}. That keeps the angle steady at about ${Math.max(G0,G1)}°, so the caravan turns at a steady rate.`;
+}
+
+// ---------- playback ----------
+let demo = null;   // { plan, i, t, paused, note }
+function startDemo(){
+  const plan = buildDemo(li);
+  if (!plan) return;
+  reset(); assisted = true;
+  S = { ...plan.start, v:0 }; wheel = 0; setGear(plan.segs[0].dir);
+  demo = { plan, i:0, t:0, paused:false, note:-1 };
+  el('autoBtn').hidden = true;
+  showNote(0);
+}
+function stopDemo(){
+  demo = null; el('coach').hidden = true; el('autoBtn').hidden = false;
+}
+function takeOver(){
+  if (!demo) return;
+  S.v = 0; stopDemo(); started = false; time = 0;
+  el('tip').textContent = gear > 0 ? FWD_TIP : REV_TIP;
+}
+function showNote(k){
+  const n = demo.plan.notes[k]; demo.note = k; demo.paused = true;
+  el('coachStep').textContent = `${Math.min(k+1, demo.plan.notes.length)} / ${demo.plan.notes.length}`;
+  el('coachText').textContent = n.text;
+  el('coachNext').textContent = n.end ? 'Watch again' : 'Next';
+  el('coachTake').textContent = n.end ? 'Close' : 'Take over';
+  el('coach').hidden = false;
+}
+function demoNext(){
+  if (!demo) return;
+  if (demo.plan.notes[demo.note].end) { startDemo(); return; }
+  demo.paused = false; el('coach').hidden = true;
+}
+function demoTick(dt){
+  const P = demo.plan;
+  if (demo.paused){ S.v = 0; return; }
+  let left = dt;
+  while (left > 0 && demo.i < P.items.length){
+    const nk = demo.note + 1;
+    if (P.notes[nk] && P.notes[nk].item === demo.i && demo.t === 0){ showNote(nk); return; }
+    const it = P.items[demo.i], need = it.dt - demo.t;
+    if (left >= need){ left -= need; demo.i++; demo.t = 0; applyPose(it.to, it.dir, it.v); }
+    else { demo.t += left; left = 0; const u = demo.t/it.dt; applyPose(lerpPose(it.from, it.to, u), it.dir, it.v); }
+  }
+  if (demo.i >= P.items.length){ S.v = 0; showNote(P.notes.length-1); freeDrive = true; }
+}
+const lerp = (a,b,u) => a + (b-a)*u;
+function lerpPose(a,b,u){ return { x:lerp(a.x,b.x,u), y:lerp(a.y,b.y,u), th:lerp(a.th,b.th,u), ph:lerp(a.ph,b.ph,u), w:lerp(a.w,b.w,u) }; }
+function applyPose(p, dir, v){
+  S.x = p.x; S.y = p.y; S.th = p.th; S.ph = p.ph; S.v = v; wheel = p.w;
+  if (gear !== dir) setGear(dir);
+}
+// faint line showing where the caravan will go for the rest of the demo
+function drawDemoPath(c){
+  if (!demo) return;
+  const P = demo.plan; c.strokeStyle = 'rgba(120,200,255,.55)'; c.lineWidth = .12; c.setLineDash([]);
+  c.beginPath(); let first = true;
+  for (let k = demo.i; k < P.items.length; k += 2){ const v = vanRect(P.items[k].to); first ? c.moveTo(v.cx, v.cy) : c.lineTo(v.cx, v.cy); first = false; }
+  c.stroke();
+}
+
+// ---------- HUD ----------
+const wheelSvg = el('wheelSvg'), wheelBox = el('wheel');
+let lastHud = '';
+function hud(){
+  wheelSvg.style.transform = `rotate(${wheel}deg)`;
+  const ha = wrap(S.th - S.ph)/D2R, mag = Math.abs(ha);
+  const bar = el('hitchBar'), pct = Math.min(mag/80,1)*50;
+  bar.style.width = pct + '%'; bar.style.left = ha >= 0 ? '50%' : (50-pct) + '%';
+  bar.style.background = mag > 60 ? 'var(--bad)' : mag > 35 ? 'var(--amber)' : 'var(--ok)';
+  const turns = Math.abs(wheel)/360;
+  el('tip').hidden = yard.h < 230 || !!demo;
+  const str = `${fmt(time)}|${(Math.abs(S.v)*2.237).toFixed(1)}|${Math.round(mag)}|${wheel>3?'R':wheel<-3?'L':'S'}${turns.toFixed(2)}|${jack}`;
+  if (str === lastHud) return; lastHud = str;
+  el('time').textContent = fmt(time);
+  el('speed').textContent = `${(Math.abs(S.v)*2.237).toFixed(1)} mph`;
+  el('hitchVal').textContent = `${Math.round(mag)}°`;
+  el('steerVal').textContent = Math.abs(wheel) < 3 ? 'Straight' : `${turns.toFixed(2)} turn ${wheel>0?'R':'L'}`;
+  wheelBox.setAttribute('aria-valuenow', Math.round(wheel));
+  el('warn').hidden = !jack;
+}
+
+// ---------- input ----------
+function setGear(g){ gear = g; el('gD').setAttribute('aria-pressed', g>0); el('gR').setAttribute('aria-pressed', g<0); }
+// Gears and Centre react on pointerdown so they work as a second touch while a finger is on the wheel
+// (phones don't send click events during multi-touch). onclick stays for keyboard use.
+[['gD',() => setGear(1)],['gR',() => setGear(-1)],['centreBtn',() => { wheel = 0; }]].forEach(([id,f0]) => {
+  const b = el(id), fn = () => { takeOver(); f0(); };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); fn(); });
+  b.onclick = fn;
+});
+el('resetBtn').onclick = reset;
+el('autoBtn').onclick = startDemo;
+el('coachNext').onclick = demoNext;
+el('coachTake').onclick = () => { if (demo && demo.plan.notes[demo.note].end) stopDemo(); else takeOver(); };
+el('retryBtn').onclick = reset;
+el('nextBtn').onclick = () => loadLevel(li+1);
+function applyOpts(){
+  document.querySelector('.app').classList.toggle('wr', opts.wheelRight);
+  el('optRHD').setAttribute('aria-pressed', !opts.lhd); el('optLHD').setAttribute('aria-pressed', opts.lhd);
+  el('optNU').setAttribute('aria-pressed', !opts.carUp); el('optCU').setAttribute('aria-pressed', opts.carUp);
+  el('optWL').setAttribute('aria-pressed', !opts.wheelRight); el('optWR').setAttribute('aria-pressed', opts.wheelRight);
+  try { localStorage.setItem('pp-opts', JSON.stringify(opts)); } catch(e) {}
+}
+el('optRHD').onclick = () => { opts.lhd = false; applyOpts(); };
+el('optLHD').onclick = () => { opts.lhd = true; applyOpts(); };
+el('optWL').onclick = () => { opts.wheelRight = false; applyOpts(); };
+el('optWR').onclick = () => { opts.wheelRight = true; applyOpts(); };
+el('optNU').onclick = () => { opts.carUp = false; cam = null; applyOpts(); };
+el('optCU').onclick = () => { opts.carUp = true; applyOpts(); };
+applyOpts();
+// tap the overhead view to hide or show the level description
+let tapStart = null;
+el('yard').addEventListener('pointerdown', e => { tapStart = { x:e.clientX, y:e.clientY, t:performance.now() }; });
+el('yard').addEventListener('pointerup', e => {
+  if (tapStart && Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y) < 12 && performance.now()-tapStart.t < 500)
+    el('descTag').classList.toggle('off');
+  tapStart = null;
+});
+// tap outside the "Pitched!" card to carry on driving from where you are (timer stays stopped)
+el('win').addEventListener('click', e => {
+  if (e.target !== e.currentTarget) return;
+  el('win').hidden = true; won = false; freeDrive = true;
+});
+const openHelp = on => { el('help').hidden = !on; if (on) { press(false); el('helpClose').focus(); } };
+el('helpBtn').onclick = () => openHelp(true);
+el('helpClose').onclick = () => openHelp(false);
+el('help').addEventListener('click', e => { if (e.target === e.currentTarget) openHelp(false); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !el('help').hidden) openHelp(false); });
+el('prevBtn').onclick = () => loadLevel(li-1);
+el('nextLvl').onclick = () => loadLevel(li+1);
+el('guideBtn').onclick = e => { guide = !guide; e.currentTarget.setAttribute('aria-pressed', guide); e.currentTarget.textContent = guide ? 'Guides on' : 'Guides off'; };
+
+let drag = null, lastDown = 0;
+const angOf = e => { const r = wheelBox.getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2)); };
+wheelBox.addEventListener('pointerdown', e => {
+  e.preventDefault(); wheelBox.setPointerCapture(e.pointerId); takeOver();
+  const now = performance.now(); if (now - lastDown < 280) wheel = 0; lastDown = now;
+  drag = { a: angOf(e) };
+});
+wheelBox.addEventListener('pointermove', e => {
+  if (!drag) return; const a = angOf(e);
+  let dd = (a - drag.a)/D2R; dd = ((dd + 540) % 360) - 180;
+  wheel = clamp(wheel + dd, -WHEELMAX, WHEELMAX); drag.a = a;
+});
+['pointerup','pointercancel','lostpointercapture'].forEach(t => wheelBox.addEventListener(t, () => drag = null));
+const press = on => { if (won) on = false; gas = on; pedal.classList.toggle('on', on); };
+pedal.addEventListener('pointerdown', e => { e.preventDefault(); pedal.setPointerCapture(e.pointerId); takeOver(); press(true); });
+['pointerup','pointercancel','lostpointercapture'].forEach(t => pedal.addEventListener(t, () => press(false)));
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+const keys = {};
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase(); keys[k] = true;
+  if (demo && ['arrowup','arrowleft','arrowright','w',' ','r','d','c'].includes(k) && el('help').hidden) takeOver();
+  if (k==='arrowup'||k==='w'||k===' ') { press(true); e.preventDefault(); }
+  if (k==='r') setGear(gear>0?-1:1);
+  if (k==='d') setGear(1);
+  if (k==='c') wheel = 0;
+  if (k==='arrowleft'||k==='arrowright') e.preventDefault();
+});
+window.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase(); keys[k] = false;
+  if (k==='arrowup'||k==='w'||k===' ') press(false);
+});
+
+// ---------- loop ----------
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now-last)/1000); last = now;
+  if (keys['arrowleft']) wheel = clamp(wheel - 360*dt, -WHEELMAX, WHEELMAX);
+  if (keys['arrowright']) wheel = clamp(wheel + 360*dt, -WHEELMAX, WHEELMAX);
+  if (demo) { if (el('help').hidden) demoTick(dt); } else if (!won) step(dt);
+  if (bumpMark){ bumpMark.t -= dt; if (bumpMark.t <= 0){ bumpMark = null; el('bumpMsg').hidden = true; } }
+  drawYard(dt); drawCompass(); renderMirror(mirL, -1); renderFront(front); renderMirror(mirR, 1);
+  if (zoomed === 'L') renderMirror(zoomV, -1); else if (zoomed === 'R') renderMirror(zoomV, 1); else if (zoomed === 'F') renderFront(zoomV);
+  hud();
+  requestAnimationFrame(frame);
+}
+loadLevel(0);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
