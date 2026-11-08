@@ -4,7 +4,7 @@ A small browser game for practising towing a caravan or trailer with a car. You 
 
 **Play it online: [paulbarber.github.io/pitch-perfect-towing](https://paulbarber.github.io/pitch-perfect-towing/)**
 
-It is a single HTML file with no libraries or server. Open `index.html` in any modern browser, on a phone or a computer. You can also download the repository and open `index.html` in any modern browser, on a phone or a computer.
+It is a single HTML file with no libraries or server. You can also download the repository and open `index.html` in any modern browser, on a phone or a computer.
 
 ## Features
 
