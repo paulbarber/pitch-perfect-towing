@@ -44,4 +44,6 @@ Requires Node.js 18 or later. Solving one level takes from a few seconds to a fe
 
 1.1
 
-© 2026 PR Barber. All rights reserved.
+## Licence
+
+Released under the [MIT License](LICENSE). © 2026 PR Barber.
