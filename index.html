@@ -872,7 +872,7 @@ const DEMOS = {
   4:{a:3,slew:600,c:[5,5,5,5,5,5,5,5,5,6,7,7,6,7,9,9,9,9,7,5,5,6,6,5,5,5,5,5,5,5,5,5,5,5,5,3]},
   5:{a:3,slew:600,c:[5,5,5,5,5,6,7,6,4,3,4,2,3,1,2,1,1,1,3,5,4,3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3]},
   6:{a:3,slew:600,c:[5,4,4,4,4,5,5,5,7,8,9,9,7,9,8,8,8,8,8,6,5,3,4,5,4,4,4,3,2,2,1,1,1,3,3,3,3,4,5,5,5,6,6,5,5,5,5,5,3]},
-  7:{a:3,slew:600,c:[5,5,5,5,5,5,5,6,7,5,4,3,2,1,1,1,1,3,3,3,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,-3,1,1,1,1,1,2,2,2,2,1,1,2,3,2,1,2,2,2,1,1,1,1,2,3,5,7,8,-1,-1,-2,-4,-6,-8,-8,-9,-7]}
+  7:{a:3,slew:600,c:[5,5,5,5,5,5,5,6,7,5,4,3,2,1,1,1,1,3,3,3,4,4,3,3,4,5,5,5,5,7,8,7,6,6,6,8,9,9,9,9,9,7,5,3,1,-8,-8,-6,-6,-5,-4,-3,-2,-1,-3,-3,-3,-3,-3,-4,-4,-5,-7,-6,-4]}
 }; // @DEMOS
 function planStep(s, dir, w, ds){
   const delta = w/WHEELMAX*MAXSTEER, v = dir*ds;
@@ -983,6 +983,7 @@ function phaseText(p, prev, next, i, reversed){
     }
     const Amt = amt[0].toUpperCase() + amt.slice(1);
     if (reversed) return pre + `Pulling forward with ${amt} ${side} to swing the rig round and line the caravan up with the pitch for the next go back.`;
+    if (!target.rig && next && next.dir < 0) return pre + `${Amt} ${side} to swing the car round and get the caravan lined up with the pitch before reversing.`;
     if (next && next.dir > 0 && next.sign && next.sign !== p.sign && Math.abs(next.w) > Math.abs(p.w)){
       p.swing = true;
       return pre + `Swinging out to the ${side} first, ${amt}, to make room for the ${sideOf(next.w)} turn coming up. Going wide gives the caravan space to follow without clipping the inside corner.`;
