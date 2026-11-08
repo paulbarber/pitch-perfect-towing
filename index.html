@@ -772,6 +772,83 @@ function renderFront(view){
   const seat = opts.lhd ? -.38 : .38;
   renderView(view, { M:[S.x + ct*1.75 - st*seat, S.y + st*1.75 + ct*seat], al:S.th, camH:1.25, hz:.36, fovH:36, fovV:24, flip:false, car:false, cab:true });
 }
+// Painter's order for boxes standing on the ground. For two boxes whose footprints don't overlap there is a
+// line between them; whichever box is on the camera's side of that line can hide the other, so it is drawn later.
+// Long hedges broke the old nearest-point sort, because a hedge can be close at one end and far at the other.
+// Scenery for the 3D views, built once per level. Long hedges are cut into ~4 m sections so that no three
+// pieces can each hide part of the next, which no drawing order could get right.
+let solidCache = null;
+function staticSolids(){
+  if (solidCache && solidCache.obstacles === obstacles) return solidCache.list;
+  const list = [];
+  for (const o of obstacles){
+    const base = { z0:0, z1:o.H, hedge:o.k==='hedge', stripe: o.k==='van' ? (o.c||'#555') : null,
+      rgb: o.k==='hedge' ? [36,92,28] : o.k==='shed' ? [118,86,58] : o.k==='bollard' ? [225,220,205] : [236,230,212] };
+    const r = o.r, long = Math.max(r.l, r.w);
+    if (o.k !== 'hedge' || long <= 5){ list.push({ ...base, r }); continue; }
+    const alongL = r.l >= r.w, n = Math.ceil(long/4), seg = long/n;
+    const ux = alongL ? Math.cos(r.a) : -Math.sin(r.a), uy = alongL ? Math.sin(r.a) : Math.cos(r.a);
+    for (let i=0;i<n;i++){
+      const off = -long/2 + (i+.5)*seg, skip = [false,false,false,false];
+      if (alongL){ if (i < n-1) skip[0] = true; if (i > 0) skip[2] = true; }
+      else { if (i > 0) skip[1] = true; if (i < n-1) skip[3] = true; }
+      list.push({ ...base, skip, pr:r, r:{ cx:r.cx+ux*off, cy:r.cy+uy*off, a:r.a, l: alongL ? seg : r.l, w: alongL ? r.w : seg } });
+    }
+  }
+  solidCache = { obstacles, list };
+  return list;
+}
+function occludes(A, B, cam){
+  let aSide = false, bSide = false;
+  for (const ang of [A.r.a, A.r.a + Math.PI/2, B.r.a, B.r.a + Math.PI/2]){
+    const ax = Math.cos(ang), ay = Math.sin(ang);
+    let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+    for (const q of A.cs){ const d = q[0]*ax + q[1]*ay; if (d < a0) a0 = d; if (d > a1) a1 = d; }
+    for (const q of B.cs){ const d = q[0]*ax + q[1]*ay; if (d < b0) b0 = d; if (d > b1) b1 = d; }
+    const c = cam[0]*ax + cam[1]*ay;
+    if (a1 < b0) { if (c <= a1) aSide = true; else bSide = true; }   // A on the low side of this gap
+    if (b1 < a0) { if (c >= a0) aSide = true; else bSide = true; }   // A on the high side
+  }
+  // camera on A's side of some dividing line: B can't hide A. On B's side of another: A can't hide B either.
+  return aSide && !bSide ? 1 : bSide && !aSide ? -1 : 0;
+}
+function paintOrder(boxes, cam, loc, NEAR, tMax){
+  const items = [];
+  for (const b of boxes){
+    b.cs = corners(b.r);
+    // the part of the footprint in front of the camera, as a range of sideways view angles (tangents)
+    const lq = b.cs.map(p => loc(p)), vis = [];
+    for (let i=0;i<4;i++){
+      const a = lq[i], c = lq[(i+1)%4];
+      if (a[0] >= NEAR) vis.push(a[1]/a[0]);
+      if ((a[0] >= NEAR) !== (c[0] >= NEAR)){ const t = (NEAR - a[0])/(c[0] - a[0]); vis.push((a[1] + (c[1]-a[1])*t)/NEAR); }
+    }
+    if (!vis.length) continue;                                // entirely behind the camera
+    b.t0 = Math.min(...vis); b.t1 = Math.max(...vis);
+    if (b.t1 < -tMax || b.t0 > tMax) continue;                // outside the field of view
+    b.t0 = Math.max(b.t0, -tMax); b.t1 = Math.min(b.t1, tMax);
+    items.push(b);
+  }
+  const n = items.length, before = items.map(() => []), need = new Array(n).fill(0);
+  for (let i=0;i<n;i++) for (let j=i+1;j<n;j++){
+    const A = items[i], B = items[j];
+    if (A.t1 < B.t0 || B.t1 < A.t0) continue;                // not overlapping on screen
+    const k = occludes(A, B, cam);
+    if (!k) continue;                                         // touching hedges etc.: leave to the distance tie-break
+    if (k > 0) { before[i].push(j); need[i]++; } else { before[j].push(i); need[j]++; }
+  }
+  // draw boxes once everything they can hide has been drawn; break any cycle with the farthest box
+  const out = [], done = new Array(n).fill(false), after = items.map(() => []);
+  before.forEach((list, i) => list.forEach(j => after[j].push(i)));
+  for (let step=0; step<n; step++){
+    let pick = -1;
+    for (let i=0;i<n;i++) if (!done[i] && need[i] === 0 && (pick < 0 || items[i].dist > items[pick].dist)) pick = i;
+    if (pick < 0) for (let i=0;i<n;i++) if (!done[i] && (pick < 0 || items[i].dist > items[pick].dist)) pick = i;
+    done[pick] = true; out.push(items[pick]);
+    for (const k of after[pick]) need[k]--;
+  }
+  return out;
+}
 function renderView(view, o){
   const { ctx:c, w, h, d } = view;
   c.setTransform(d,0,0,d,0,0);
@@ -793,6 +870,13 @@ function renderView(view, o){
     c.fillStyle = style; c.fill();
     if (stroke){ c.strokeStyle = stroke; c.lineWidth = 1; c.lineJoin = 'round'; c.stroke(); }
   }
+  function edge3(a, b, style){
+    let p = loc(a), q = loc(b);
+    if (p[0] < NEAR && q[0] < NEAR) return;
+    if (p[0] < NEAR || q[0] < NEAR){ const t = (NEAR - p[0])/(q[0] - p[0]); const m = [NEAR, p[1]+(q[1]-p[1])*t, p[2]+(q[2]-p[2])*t]; if (p[0] < NEAR) p = m; else q = m; }
+    const s0 = scr(p), s1 = scr(q);
+    c.strokeStyle = style; c.lineWidth = 1; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s1[0], s1[1]); c.stroke();
+  }
   const HAZE = [196,212,214];
   const shadeFog = (rgb, k, dist) => { const fz = clamp((dist-5)/40, 0, .65);
     return `rgb(${(rgb[0]*k*(1-fz)+HAZE[0]*fz)|0},${(rgb[1]*k*(1-fz)+HAZE[1]*fz)|0},${(rgb[2]*k*(1-fz)+HAZE[2]*fz)|0})`; };
@@ -812,31 +896,40 @@ function renderView(view, o){
   const good = parked();
   fill3(corners(target), good ? 'rgba(92,196,128,.35)' : 'rgba(244,166,42,.22)');
   for (const [p,q] of bayLines(target)) line(p,q, good ? '#5cc480' : '#f4a62a');
-  const boxes = obstacles.map(o => ({ r:o.r, z0:0, z1:o.H,
-      rgb: o.k==='hedge' ? [36,92,28] : o.k==='shed' ? [118,86,58] : o.k==='bollard' ? [225,220,205] : [236,230,212],
-      stripe: o.k==='van' ? (o.c||'#555') : null, hedge: o.k==='hedge' }));
+  const boxes = staticSolids().slice();
   boxes.push({ r:vanRect(S), z0:.3, z1:VAN.H, rgb:[239,232,212], stripe:'#9b3a3a', win:true });
   if (o.car) boxes.push({ r:carRect(S), z0:.25, z1:CAR.H, rgb:[43,102,168] });
-  for (const b of boxes){
-    const dx=M[0]-b.r.cx, dy=M[1]-b.r.cy, c0=Math.cos(b.r.a), s0=Math.sin(b.r.a);
-    const lx = clamp(dx*c0+dy*s0, -b.r.l/2, b.r.l/2), ly = clamp(-dx*s0+dy*c0, -b.r.w/2, b.r.w/2);
-    b.dist = Math.hypot(dx*c0+dy*s0-lx, -dx*s0+dy*c0-ly);
-  }
-  boxes.sort((a,b) => b.dist - a.dist);
-  for (const b of boxes){
-    if (b.dist > 70) continue;
-    const cs = corners(b.r);
-    const edge = shadeFog([10,22,8], 1, b.dist);
-    if (b.z1 <= camH) fill3(cs.map(p=>[p[0],p[1],b.z1]), shadeFog(b.rgb,1.05,b.dist), edge);
+  const distTo = r => { const dx=M[0]-r.cx, dy=M[1]-r.cy, c0=Math.cos(r.a), s0=Math.sin(r.a);
+    const lx = clamp(dx*c0+dy*s0, -r.l/2, r.l/2), ly = clamp(-dx*s0+dy*c0, -r.w/2, r.w/2);
+    return Math.hypot(dx*c0+dy*s0-lx, -dx*s0+dy*c0-ly); };
+  for (const b of boxes){ b.dist = distTo(b.r); b.sd = b.pr ? distTo(b.pr) : b.dist; }   // sd: shade a whole hedge alike
+  const drawList = paintOrder(boxes.filter(b => b.dist <= 70), M, loc, NEAR, (w/2)/F*1.05);
+  for (const b of drawList){
+    const cs = b.cs;
+    const edge = shadeFog([10,22,8], 1, b.sd);
+    if (b.z1 <= camH){
+      if (!b.skip) fill3(cs.map(p=>[p[0],p[1],b.z1]), shadeFog(b.rgb,1.05,b.sd), edge);
+      else { const tc = shadeFog(b.rgb,1.05,b.sd); fill3(cs.map(p=>[p[0],p[1],b.z1]), tc, tc);
+             for (let i=0;i<4;i++) if (!b.skip[i]) edge3([...cs[i], b.z1], [...cs[(i+1)%4], b.z1], edge); }
+    }
     for (let i=0;i<4;i++){
+      if (b.skip && b.skip[i]) continue;                     // face buried inside a hedge
       const p = cs[i], q = cs[(i+1)%4], mx=(p[0]+q[0])/2, my=(p[1]+q[1])/2;
       let nx = mx-b.r.cx, ny = my-b.r.cy; const nm = Math.hypot(nx,ny)||1; nx/=nm; ny/=nm;
       if ((M[0]-mx)*nx + (M[1]-my)*ny <= 0) continue;
-      const near = clamp(1.25 - b.dist/30, .85, 1.25);
+      const near = clamp(1.25 - b.sd/30, .85, 1.25);
       const k = (.5 + .45*(nx*LIGHT[0] + ny*LIGHT[1] + 1)/2) * near;
-      fill3([[p[0],p[1],b.z0],[q[0],q[1],b.z0],[q[0],q[1],b.z1],[p[0],p[1],b.z1]], shadeFog(b.rgb,k,b.dist), edge);
-      if (b.hedge){ const tz = b.z1-.12;
-        fill3([[p[0],p[1],tz],[q[0],q[1],tz],[q[0],q[1],b.z1],[p[0],p[1],b.z1]], shadeFog([120,180,80],near,b.dist)); }
+      const face = [[p[0],p[1],b.z0],[q[0],q[1],b.z0],[q[0],q[1],b.z1],[p[0],p[1],b.z1]];
+      if (!b.skip) fill3(face, shadeFog(b.rgb,k,b.sd), edge);
+      else {
+        // hedge section: outline only the real edges, so the cuts between sections don't show
+        const fc = shadeFog(b.rgb,k,b.sd); fill3(face, fc, fc);   // same-colour trace hides hairline gaps
+        edge3(face[0], face[1], edge); edge3(face[3], face[2], edge);
+        if (!b.skip[(i+3)%4]) edge3(face[0], face[3], edge);
+        if (!b.skip[(i+1)%4]) edge3(face[1], face[2], edge);
+      }
+      if (b.hedge){ const tz = b.z1-.12, bc = shadeFog([120,180,80],near,b.sd);
+        fill3([[p[0],p[1],tz],[q[0],q[1],tz],[q[0],q[1],b.z1],[p[0],p[1],b.z1]], bc, b.skip ? bc : undefined); }
       if (b.stripe) fill3([[p[0],p[1],1.0],[q[0],q[1],1.0],[q[0],q[1],1.16],[p[0],p[1],1.16]], b.stripe);
       if (b.win) { const t0=.18, t1=.32; fill3([[p[0]+(q[0]-p[0])*t0,p[1]+(q[1]-p[1])*t0,1.45],[p[0]+(q[0]-p[0])*t1,p[1]+(q[1]-p[1])*t1,1.45],
                       [p[0]+(q[0]-p[0])*t1,p[1]+(q[1]-p[1])*t1,2.05],[p[0]+(q[0]-p[0])*t0,p[1]+(q[1]-p[1])*t0,2.05]], '#3c4a54'); }
